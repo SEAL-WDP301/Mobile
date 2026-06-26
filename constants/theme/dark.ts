@@ -1,21 +1,18 @@
 export const DarkTheme = {
-    background: "#0F172A",
-
-    surface: "#1E293B",
-
-    card: "#1E293B",
-
-    input: "#020617",
-
-    primary: "#F97316",
-
-    primaryText: "#FFFFFF",
-
-    text: "#FFFFFF",
-
-    textSecondary: "#CBD5E1",
-
-    border: "#334155",
-
-    placeholder: "#94A3B8",
+    background: "#11100F",
+    surface: "#211F1D",
+    card: "#1A1918",
+    cardElevated: "#211F1D",
+    input: "#0F0E0D",
+    primary: "#F37021",
+    primaryLight: "#FF8A3D",
+    primaryDark: "#C8470F",
+    text: "#F8F7F5",
+    textSecondary: "#A8A29E",
+    border: "rgba(255, 255, 255, 0.05)",
+    placeholder: "#57534E",
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+    info: "#06B6D4",
 };

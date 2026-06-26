@@ -5,53 +5,58 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Modal,
-  TextInput,
   StatusBar,
-  Dimensions
+  Dimensions,
+  Modal,
+  Alert
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import {
   Crown,
-  Sparkles,
-  Shield,
-  Trophy,
-  UserPlus,
+  Users,
+  CheckCircle,
+  AlertCircle,
   MessageSquare,
   LogOut,
-  Plus,
-  Mail,
-  X,
-  Users
+  ChevronRight,
+  ShieldCheck,
+  Star,
+  Info,
+  X
 } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
+import { TEAM_MEMBERS, MOCK_MENTOR } from "@/constants/mockData";
 
 const { width } = Dimensions.get("window");
 
-const MEMBERS = [
-  { name: "John Nguyen", role: "Team Lead", uni: "FPT University HCM", status: "Online", you: true, initials: "JN" },
-  { name: "Linh Tran", role: "Backend", uni: "FPT University HN", status: "Online", initials: "LT" },
-  { name: "Minh Pham", role: "Frontend", uni: "FPT University DN", status: "Idle", initials: "MP" },
-  { name: "Anh Le", role: "ML Engineer", uni: "FPT University HCM", status: "Offline", initials: "AL" },
-  { name: "Hoa Vu", role: "Designer", uni: "FPT University HN", status: "Online", initials: "HV" },
-];
-
 export default function TeamsScreen() {
   const { isDark } = useTheme();
+  
+  // Custom states
   const [hasTeam, setHasTeam] = useState(true);
-  const [modalKind, setModalKind] = useState<null | "create" | "join">(null);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   const colors = {
-    bg: isDark ? "#0C0A09" : "#F9F6F0",
-    cardBg: isDark ? "rgba(20, 17, 15, 0.75)" : "rgba(255, 255, 255, 0.95)",
-    cardBorder: isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.05)",
-    textPrimary: isDark ? "#FFFFFF" : "#1C1917",
-    textSecondary: isDark ? "#A39690" : "#78716C",
-    textMuted: isDark ? "#57534E" : "#A8A29E",
-    accent: "#f37021",
-    subAccent: "#ff9248",
-    inputBg: isDark ? "#0C0A09" : "#FFFFFF",
+    bg: isDark ? "#11100F" : "#F9F6F0",
+    cardBg: isDark ? "#1A1918" : "#FFFFFF",
+    cardElevated: isDark ? "#211F1D" : "#F5F3EF",
+    textPrimary: isDark ? "#F8F7F5" : "#1C1917",
+    textSecondary: isDark ? "#A8A29E" : "#78716C",
+    accent: "#F37021",
+    border: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
   };
+
+  const checklistItems = [
+    { label: "Đủ số lượng thành viên (tối thiểu 3)", status: true },
+    { label: "Tất cả thành viên đã xác nhận", status: true },
+    { label: "Đã chọn track thi đấu (AI for Education)", status: true },
+    { label: "Hồ sơ đội thi hợp lệ", status: true },
+    { label: "Đã nộp bài giải pháp Round 1", status: true },
+  ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
@@ -60,11 +65,18 @@ export default function TeamsScreen() {
       {/* Screen Header */}
       <View style={styles.header}>
         <View>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>My Team</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Sprint 2 · qualifying round</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Đội nhóm</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Quản lý thông tin và tiến độ của đội</Text>
         </View>
-        <TouchableOpacity onPress={() => setHasTeam(!hasTeam)}>
-          <Text style={[styles.demoToggle, { color: colors.textMuted }]}>demo</Text>
+        
+        {/* Simple toggle to test "No Team" state */}
+        <TouchableOpacity 
+          style={[styles.demoBtn, { borderColor: colors.border }]} 
+          onPress={() => setHasTeam(!hasTeam)}
+        >
+          <Text style={[styles.demoBtnText, { color: colors.textSecondary }]}>
+            {hasTeam ? "Demo: Không Đội" : "Demo: Có Đội"}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -74,277 +86,236 @@ export default function TeamsScreen() {
       >
         {hasTeam ? (
           <View style={styles.teamContent}>
-            {/* ================= TEAM HEADER CARD ================= */}
-            <View style={[styles.teamCard, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-              {/* Glow background accent */}
-              <View style={[styles.cardGlow, { backgroundColor: colors.accent, opacity: isDark ? 0.1 : 0.03 }]} />
-
-              <View style={styles.teamCardInfo}>
+            {/* ================= TEAM OVERVIEW ================= */}
+            <View style={[styles.teamCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+              <View style={styles.teamCardHeader}>
                 <View style={[styles.teamAvatar, { backgroundColor: colors.accent }]}>
-                  <Text style={styles.teamAvatarText}>QD</Text>
+                  <Text style={styles.teamAvatarText}>TP</Text>
                 </View>
-                <View style={styles.teamDetails}>
+                <View style={styles.teamCardDetails}>
                   <View style={styles.teamNameRow}>
-                    <Text style={[styles.teamName, { color: colors.textPrimary }]}>Quantum Drift</Text>
+                    <Text style={[styles.teamName, { color: colors.textPrimary }]}>Team Phoenix</Text>
                     <Crown size={16} color={colors.accent} style={{ marginLeft: 6 }} />
                   </View>
-                  <Text style={[styles.teamMeta, { color: colors.textSecondary }]}>
-                    AI Infrastructure · 5 members
+                  <Text style={[styles.teamTrack, { color: colors.textSecondary }]}>
+                    AI for Education · 4 thành viên
                   </Text>
-                  <View style={styles.teamTags}>
-                    <View style={[styles.tagBadge, { backgroundColor: `${colors.accent}15` }]}>
-                      <Text style={[styles.tagText, { color: colors.accent }]}>RANK #12</Text>
+                  <View style={styles.badgeRow}>
+                    <View style={[styles.statusBadge, { backgroundColor: `${colors.success}15` }]}>
+                      <Text style={[styles.statusBadgeText, { color: colors.success }]}>ĐỦ ĐIỀU KIỆN</Text>
                     </View>
-                    <View style={[styles.tagBadge, { backgroundColor: isDark ? "#292524" : "#E7E5E4" }]}>
-                      <Text style={[styles.tagText, { color: colors.textPrimary }]}>ROUND 2</Text>
-                    </View>
+                    <Text style={[styles.teamCodeText, { color: colors.textSecondary }]}>
+                      Mã: <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>SEAL-PHE92</Text>
+                    </Text>
                   </View>
                 </View>
               </View>
             </View>
 
-            {/* ================= PROGRESS TILES ================= */}
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginVertical: 12 }]}>Team progress</Text>
-            <View style={styles.progressGrid}>
-              <ProgressTile label="Current round" value="Sprint 2" icon={Sparkles} accent={false} colors={colors} isDark={isDark} />
-              <ProgressTile label="Submission" value="In review" icon={Shield} accent={true} colors={colors} isDark={isDark} />
-              <ProgressTile label="Ranking" value="#12 / 280" icon={Trophy} accent={false} colors={colors} isDark={isDark} />
-              <ProgressTile label="Qualified" value="Top 16" icon={Crown} accent={true} colors={colors} isDark={isDark} />
+            {/* ================= TEAM PROGRESS ================= */}
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>TIẾN ĐỘ & ĐIỀU KIỆN ĐỘI</Text>
+            <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+              {checklistItems.map((item, idx) => (
+                <View key={idx} style={styles.checkRow}>
+                  {item.status ? (
+                    <CheckCircle size={16} color={colors.success} style={{ marginRight: 10 }} />
+                  ) : (
+                    <AlertCircle size={16} color={colors.warning} style={{ marginRight: 10 }} />
+                  )}
+                  <Text style={[styles.checkLabel, { color: colors.textPrimary }]}>{item.label}</Text>
+                </View>
+              ))}
             </View>
 
-            {/* ================= MEMBERS SECTION ================= */}
-            <View style={[styles.sectionHeaderWrapper, { marginTop: 24, marginBottom: 12 }]}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Members · {MEMBERS.length}</Text>
-              <TouchableOpacity style={[styles.inviteBtn, { backgroundColor: `${colors.accent}15` }]} activeOpacity={0.8}>
-                <UserPlus size={12} color={colors.accent} />
-                <Text style={[styles.inviteBtnText, { color: colors.accent }]}>Invite</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={[styles.membersCard, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-              {MEMBERS.map((m, idx) => (
-                <View
-                  key={m.name}
+            {/* ================= MEMBERS ================= */}
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>THÀNH VIÊN ({TEAM_MEMBERS.length})</Text>
+            <View style={[styles.membersCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+              {TEAM_MEMBERS.map((member, idx) => (
+                <View 
+                  key={idx} 
                   style={[
-                    styles.memberRow,
-                    idx !== MEMBERS.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.cardBorder }
+                    styles.memberRow, 
+                    idx !== TEAM_MEMBERS.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }
                   ]}
                 >
                   <View style={styles.memberAvatarWrapper}>
-                    <View style={[styles.memberAvatar, { backgroundColor: isDark ? "#292524" : "#E7E5E4" }]}>
-                      <Text style={[styles.memberAvatarText, { color: colors.textPrimary }]}>{m.initials}</Text>
+                    <View style={[styles.memberAvatar, { backgroundColor: colors.cardElevated }]}>
+                      <Text style={[styles.memberAvatarText, { color: colors.textPrimary }]}>{member.initials}</Text>
                     </View>
-                    <View
+                    <View 
                       style={[
-                        styles.statusIndicator,
-                        {
-                          backgroundColor:
-                            m.status === "Online"
-                              ? "#22c55e"
-                              : m.status === "Idle"
-                                ? "#f59e0b"
-                                : colors.textMuted,
-                          borderColor: colors.cardBg,
-                        },
-                      ]}
+                        styles.statusDot, 
+                        { 
+                          backgroundColor: member.status === "Online" ? colors.success : (member.status === "Idle" ? colors.warning : colors.textSecondary),
+                          borderColor: colors.cardBg
+                        }
+                      ]} 
                     />
                   </View>
 
                   <View style={styles.memberInfo}>
                     <View style={styles.memberNameRow}>
-                      <Text style={[styles.memberName, { color: colors.textPrimary }]}>{m.name}</Text>
-                      {m.you && (
+                      <Text style={[styles.memberName, { color: colors.textPrimary }]}>{member.name}</Text>
+                      {member.you && (
                         <View style={[styles.youBadge, { backgroundColor: `${colors.accent}15` }]}>
-                          <Text style={[styles.youBadgeText, { color: colors.accent }]}>YOU</Text>
+                          <Text style={[styles.youBadgeText, { color: colors.accent }]}>BẠN</Text>
                         </View>
                       )}
                     </View>
-                    <Text style={[styles.memberMeta, { color: colors.textSecondary }]}>
-                      {m.role} · {m.uni}
+                    <Text style={[styles.memberSubText, { color: colors.textSecondary }]}>
+                      {member.role} · {member.uni}
                     </Text>
                   </View>
+
+                  {member.role.includes("Leader") && (
+                    <Crown size={14} color={colors.accent} />
+                  )}
                 </View>
               ))}
             </View>
 
-            {/* ================= ACTIONS ================= */}
-            <View style={styles.actionsContainer}>
-              <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+            {/* ================= WARNING/ALERT BOX ================= */}
+            <View style={[styles.warningBox, { backgroundColor: `${colors.warning}10`, borderColor: `${colors.warning}30` }]}>
+              <Info size={16} color={colors.warning} style={{ marginRight: 10, marginTop: 2 }} />
+              <Text style={[styles.warningText, { color: colors.warning }]}>
+                Các thao tác quản lý đội (Xóa thành viên, đổi trưởng nhóm, đổi track thi, giải tán đội) chỉ thực hiện được trên <Text style={{ fontWeight: "700" }}>SEAL Web Portal</Text>.
+              </Text>
+            </View>
+
+            {/* ================= MENTOR CARD ================= */}
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>MENTOR CỦA ĐỘI</Text>
+            <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+              <View style={styles.mentorHeader}>
+                <View style={[styles.mentorAvatarLarge, { backgroundColor: colors.accent }]}>
+                  <Text style={styles.mentorAvatarTextLarge}>AN</Text>
+                </View>
+                <View style={styles.mentorDetails}>
+                  <View style={styles.mentorNameRow}>
+                    <Text style={[styles.mentorNameText, { color: colors.textPrimary }]}>{MOCK_MENTOR.name}</Text>
+                    <View style={styles.ratingRow}>
+                      <Star size={12} color={colors.accent} fill={colors.accent} />
+                      <Text style={[styles.ratingText, { color: colors.accent }]}>{MOCK_MENTOR.rating}</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.mentorPosition, { color: colors.textSecondary }]}>
+                    {MOCK_MENTOR.position} · {MOCK_MENTOR.org}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.mentorExpertiseContainer}>
+                {MOCK_MENTOR.expertise.slice(0, 2).map((exp, idx) => (
+                  <View key={idx} style={[styles.expertBadge, { backgroundColor: colors.cardElevated }]}>
+                    <Text style={[styles.expertBadgeText, { color: colors.textSecondary }]}>{exp}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {MOCK_MENTOR.nextAppointment && (
+                <View style={[styles.appointmentBox, { backgroundColor: colors.cardElevated }]}>
+                  <Text style={[styles.appointmentLabel, { color: colors.textSecondary }]}>Cuộc hẹn sắp tới:</Text>
+                  <Text style={[styles.appointmentValue, { color: colors.textPrimary }]}>{MOCK_MENTOR.nextAppointment}</Text>
+                </View>
+              )}
+
+              <TouchableOpacity 
+                style={[styles.activityActionBtn, { backgroundColor: colors.cardElevated, marginTop: 12 }]}
                 activeOpacity={0.8}
+                onPress={() => router.push("/mentor-detail")}
               >
-                <MessageSquare size={16} color={colors.textPrimary} />
-                <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Team chat</Text>
+                <Text style={[styles.activityActionBtnText, { color: colors.textPrimary }]}>Xem chi tiết Mentor</Text>
+                <ChevronRight size={16} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* ================= ACTIONS ================= */}
+            <View style={styles.actionsRow}>
+              <TouchableOpacity 
+                style={[styles.actionBtnOutline, { borderColor: colors.border }]}
+                activeOpacity={0.7}
+                onPress={() => Alert.alert("Thông báo", "Chức năng nhắn tin nhóm sẽ sớm ra mắt ở phiên bản tiếp theo.")}
+              >
+                <MessageSquare size={16} color={colors.textPrimary} style={{ marginRight: 8 }} />
+                <Text style={[styles.actionBtnOutlineText, { color: colors.textPrimary }]}>Nhắn tin nhóm</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.actionBtnDanger, { borderColor: "rgba(239, 68, 68, 0.2)" }]}
-                activeOpacity={0.8}
+              <TouchableOpacity 
+                style={[styles.actionBtnDanger, { borderColor: `${colors.error}30` }]}
+                activeOpacity={0.7}
+                onPress={() => setShowLeaveModal(true)}
               >
-                <LogOut size={16} color="#ef4444" />
-                <Text style={[styles.actionBtnText, { color: "#ef4444" }]}>Leave team</Text>
+                <LogOut size={16} color={colors.error} style={{ marginRight: 8 }} />
+                <Text style={[styles.actionBtnDangerText, { color: colors.error }]}>Rời khỏi đội</Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
-          /* ================= NO TEAM SCREEN ================= */
-          <View style={[styles.noTeamCard, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-            <View style={[styles.noTeamIconWrapper, { backgroundColor: colors.accent }]}>
-              <Users size={28} color="#FFFFFF" />
+          /* ================= NO TEAM STATE ================= */
+          <View style={[styles.noTeamContainer, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <View style={[styles.noTeamIconWrapper, { backgroundColor: `${colors.accent}15` }]}>
+              <Users size={32} color={colors.accent} />
             </View>
-            <Text style={[styles.noTeamTitle, { color: colors.textPrimary }]}>You don't have a team yet</Text>
+            <Text style={[styles.noTeamTitle, { color: colors.textPrimary }]}>Bạn chưa có đội thi</Text>
             <Text style={[styles.noTeamSubtitle, { color: colors.textSecondary }]}>
-              Create your own squad or join an existing one with an invite code.
+              Giải chạy học thuật SEAL Hackathon yêu cầu bạn lập đội từ 3-5 thành viên để tiếp tục tham gia.
             </Text>
 
-            <View style={styles.noTeamActions}>
-              <TouchableOpacity
-                style={[styles.ctaBtn, { backgroundColor: colors.accent }]}
-                activeOpacity={0.9}
-                onPress={() => setModalKind("create")}
-              >
-                <Plus size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                <Text style={styles.ctaBtnText}>Create</Text>
-              </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.ctaPrimary, { backgroundColor: colors.accent }]}
+              activeOpacity={0.8}
+              onPress={() => Alert.alert("Thông báo", "Vui lòng truy cập SEAL Web Portal để đăng ký và tạo/gia nhập đội thi.")}
+            >
+              <Text style={styles.ctaPrimaryText}>Đăng ký đội thi trên SEAL Web</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.ctaBtnSecondary, { backgroundColor: isDark ? "#292524" : "#E7E5E4" }]}
-                activeOpacity={0.8}
-                onPress={() => setModalKind("join")}
-              >
-                <Mail size={16} color={colors.textPrimary} style={{ marginRight: 6 }} />
-                <Text style={[styles.ctaBtnSecondaryText, { color: colors.textPrimary }]}>Join</Text>
-              </TouchableOpacity>
+            <View style={styles.noTeamFooter}>
+              <Text style={[styles.noTeamFooterText, { color: colors.textSecondary }]}>
+                Đã được mời? Nhập mã code tham gia trên Web Portal.
+              </Text>
             </View>
           </View>
         )}
       </ScrollView>
 
-      {/* ================= MODAL CREATE / JOIN ================= */}
+      {/* ================= LEAVE TEAM CONFIRMATION MODAL ================= */}
       <Modal
-        visible={modalKind !== null}
-        animationType="slide"
+        visible={showLeaveModal}
         transparent={true}
-        onRequestClose={() => setModalKind(null)}
+        animationType="fade"
+        onRequestClose={() => setShowLeaveModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                {modalKind === "create" ? "Create new team" : "Join a team"}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setModalKind(null)}
-                style={[styles.modalCloseBtn, { backgroundColor: isDark ? "#292524" : "#E7E5E4" }]}
-              >
-                <X size={16} color={colors.textPrimary} />
+          <View style={[styles.modalContent, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <View style={styles.modalHeaderRow}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Xác nhận rời khỏi đội</Text>
+              <TouchableOpacity onPress={() => setShowLeaveModal(false)}>
+                <X size={18} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
-
-            <View style={styles.modalBody}>
-              {modalKind === "create" ? (
-                <>
-                  <FormField label="Team name" placeholder="e.g. Quantum Drift" colors={colors} />
-                  <FormField label="Team description" placeholder="What problem will you ship?" textarea={true} colors={colors} />
-                  <FormField label="Category" placeholder="AI Infrastructure" colors={colors} />
-                </>
-              ) : (
-                <>
-                  <FormField label="Invitation code" placeholder="e.g. SEAL-7F2K" colors={colors} />
-                  <FormField label="Team ID (optional)" placeholder="seal://team/4421" colors={colors} />
-                </>
-              )}
+            <Text style={[styles.modalBodyText, { color: colors.textSecondary }]}>
+              Hành động này không thể hoàn tác. Bạn sẽ mất toàn bộ tiến trình của đội thi hiện tại. Trưởng nhóm cần chỉ định người khác trước khi rời đội (thực hiện trên Web).
+            </Text>
+            <View style={styles.modalActionsRow}>
+              <TouchableOpacity 
+                style={[styles.modalBtnCancel, { backgroundColor: colors.cardElevated }]}
+                onPress={() => setShowLeaveModal(false)}
+              >
+                <Text style={[styles.modalBtnCancelText, { color: colors.textPrimary }]}>Hủy bỏ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalBtnConfirm, { backgroundColor: colors.error }]}
+                onPress={() => {
+                  setShowLeaveModal(false);
+                  setHasTeam(false);
+                }}
+              >
+                <Text style={styles.modalBtnConfirmText}>Đồng ý rời</Text>
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              onPress={() => setModalKind(null)}
-              style={[styles.modalSubmitBtn, { backgroundColor: colors.accent }]}
-              activeOpacity={0.9}
-            >
-              <Text style={styles.modalSubmitBtnText}>
-                {modalKind === "create" ? "Create team" : "Send request"}
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
     </SafeAreaView>
-  );
-}
-
-// Sub-Component: Progress Tile
-function ProgressTile({
-  label,
-  value,
-  icon: IconComponent,
-  accent,
-  colors,
-  isDark
-}: {
-  label: string;
-  value: string;
-  icon: any;
-  accent: boolean;
-  colors: any;
-  isDark: boolean;
-}) {
-  return (
-    <View
-      style={[
-        styles.progressTile,
-        {
-          backgroundColor: colors.cardBg,
-          borderColor: accent ? `${colors.accent}40` : colors.cardBorder,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.tileIconWrapper,
-          {
-            backgroundColor: accent ? colors.accent : (isDark ? "#292524" : "#E7E5E4"),
-          },
-        ]}
-      >
-        <IconComponent size={16} color={accent ? "#FFFFFF" : colors.accent} />
-      </View>
-      <Text style={[styles.tileLabel, { color: colors.textSecondary }]}>{label}</Text>
-      <Text style={[styles.tileValue, { color: colors.textPrimary }]}>{value}</Text>
-    </View>
-  );
-}
-
-// Sub-Component: Form Field
-function FormField({
-  label,
-  placeholder,
-  textarea,
-  colors
-}: {
-  label: string;
-  placeholder: string;
-  textarea?: boolean;
-  colors: any;
-}) {
-  return (
-    <View style={styles.fieldWrapper}>
-      <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{label}</Text>
-      <TextInput
-        placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
-        style={[
-          styles.fieldInput,
-          {
-            backgroundColor: colors.inputBg,
-            borderColor: colors.cardBorder,
-            color: colors.textPrimary,
-          },
-          textarea && { height: 80, textAlignVertical: "top", paddingTop: 10 }
-        ]}
-        multiline={textarea}
-        numberOfLines={textarea ? 3 : 1}
-      />
-    </View>
   );
 }
 
@@ -353,73 +324,62 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "900",
-    letterSpacing: -0.3,
+    fontWeight: "800",
   },
   headerSubtitle: {
     fontSize: 13,
     marginTop: 2,
   },
-  demoToggle: {
-    fontSize: 10,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    textDecorationLine: "underline",
+  demoBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  demoBtnText: {
+    fontSize: 9,
+    fontWeight: "700",
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 110,
   },
   teamContent: {
-    gap: 12,
-  },
-  teamCard: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 20,
-    position: "relative",
-    overflow: "hidden",
-  },
-  cardGlow: {
-    position: "absolute",
-    right: -20,
-    top: -20,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-  },
-  teamCardInfo: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: 16,
   },
+  teamCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+  },
+  teamCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
   teamAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#f37021",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 4,
   },
   teamAvatarText: {
     color: "#FFFFFF",
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "900",
   },
-  teamDetails: {
+  teamCardDetails: {
     flex: 1,
   },
   teamNameRow: {
@@ -428,79 +388,54 @@ const styles = StyleSheet.create({
   },
   teamName: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: "800",
   },
-  teamMeta: {
+  teamTrack: {
     fontSize: 12,
     marginTop: 2,
   },
-  teamTags: {
+  badgeRow: {
     flexDirection: "row",
-    gap: 6,
+    alignItems: "center",
+    gap: 12,
     marginTop: 8,
   },
-  tagBadge: {
+  statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 99,
+    borderRadius: 4,
   },
-  tagText: {
+  statusBadgeText: {
     fontSize: 9,
     fontWeight: "800",
   },
+  teamCodeText: {
+    fontSize: 11,
+  },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 11,
     fontWeight: "800",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginTop: 10,
+    marginBottom: -4,
   },
-  progressGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  progressTile: {
-    width: (width - 44) / 2,
-    borderRadius: 18,
+  card: {
+    borderRadius: 20,
     borderWidth: 1,
     padding: 16,
   },
-  tileIconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  tileLabel: {
-    fontSize: 9,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 12,
-  },
-  tileValue: {
-    fontSize: 16,
-    fontWeight: "900",
-    marginTop: 2,
-  },
-  sectionHeaderWrapper: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  inviteBtn: {
+  checkRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 99,
+    marginBottom: 10,
   },
-  inviteBtnText: {
-    fontSize: 11,
-    fontWeight: "700",
+  checkLabel: {
+    fontSize: 13,
+    fontWeight: "500",
   },
   membersCard: {
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
     overflow: "hidden",
   },
@@ -511,30 +446,30 @@ const styles = StyleSheet.create({
   },
   memberAvatarWrapper: {
     position: "relative",
+    marginRight: 12,
   },
   memberAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
   memberAvatarText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
   },
-  statusIndicator: {
+  statusDot: {
     position: "absolute",
     bottom: -1,
     right: -1,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1.5,
   },
   memberInfo: {
     flex: 1,
-    marginLeft: 12,
   },
   memberNameRow: {
     flexDirection: "row",
@@ -548,153 +483,242 @@ const styles = StyleSheet.create({
   youBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 99,
+    borderRadius: 4,
   },
   youBadgeText: {
     fontSize: 8,
     fontWeight: "800",
   },
-  memberMeta: {
+  memberSubText: {
     fontSize: 11,
     marginTop: 2,
   },
-  actionsContainer: {
+  warningBox: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 12,
+    alignItems: "flex-start",
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  actionBtn: {
+  warningText: {
+    fontSize: 12,
+    lineHeight: 16,
+    flex: 1,
+  },
+  mentorHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+  mentorAvatarLarge: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  mentorAvatarTextLarge: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  mentorDetails: {
+    flex: 1,
+  },
+  mentorNameRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  mentorNameText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  ratingText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  mentorPosition: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  mentorExpertiseContainer: {
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 12,
+  },
+  expertBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  expertBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  appointmentBox: {
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 6,
+  },
+  appointmentLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  appointmentValue: {
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  activityActionBtn: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 12,
+  },
+  activityActionBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  actionsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  actionBtnOutline: {
+    flex: 1.2,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  actionBtnOutlineText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  actionBtnDanger: {
     flex: 1,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 8,
-    height: 48,
-    borderRadius: 16,
+    height: 44,
+    borderRadius: 12,
     borderWidth: 1,
-  },
-  actionBtnDanger: {
     backgroundColor: "rgba(239, 68, 68, 0.05)",
   },
-  actionBtnText: {
-    fontSize: 14,
-    fontWeight: "600",
+  actionBtnDangerText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
-  noTeamCard: {
+  noTeamContainer: {
     borderRadius: 24,
     borderWidth: 1,
-    padding: 32,
+    padding: 24,
     alignItems: "center",
-    textAlign: "center",
-    marginTop: 24,
+    marginTop: 20,
   },
   noTeamIconWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 60,
+    height: 60,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 16,
   },
   noTeamTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
-    marginTop: 16,
+    marginBottom: 8,
   },
   noTeamSubtitle: {
     fontSize: 13,
     textAlign: "center",
     lineHeight: 18,
-    marginTop: 6,
+    marginBottom: 24,
   },
-  noTeamActions: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 24,
-    width: "100%",
-  },
-  ctaBtn: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    height: 46,
-    borderRadius: 23,
-  },
-  ctaBtnText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  ctaBtnSecondary: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    height: 46,
-    borderRadius: 23,
-  },
-  ctaBtnSecondaryText: {
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-  },
-  modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-  },
-  modalCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalBody: {
-    gap: 12,
-  },
-  modalSubmitBtn: {
+  ctaPrimary: {
     height: 48,
     borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 24,
+    width: "100%",
   },
-  modalSubmitBtnText: {
+  ctaPrimaryText: {
     color: "#FFFFFF",
+    fontWeight: "800",
     fontSize: 14,
-    fontWeight: "700",
   },
-  fieldWrapper: {
-    gap: 6,
+  noTeamFooter: {
+    marginTop: 16,
   },
-  fieldLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+  noTeamFooterText: {
+    fontSize: 11,
+    textAlign: "center",
   },
-  fieldInput: {
-    height: 46,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    width: "100%",
+    borderRadius: 20,
     borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    fontSize: 14,
+    padding: 20,
+  },
+  modalHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  modalBodyText: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 20,
+  },
+  modalActionsRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  modalBtnCancel: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBtnCancelText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  modalBtnConfirm: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBtnConfirmText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
   },
 });

@@ -1,21 +1,18 @@
 export const LightTheme = {
-    background: "#F8FAFC",
-
+    background: "#F9F6F0",
     surface: "#FFFFFF",
-
     card: "#FFFFFF",
-
-    input: "#F8FAFC",
-
-    primary: "#F97316",
-
-    primaryText: "#FFFFFF",
-
-    text: "#0F172A",
-
-    textSecondary: "#64748B",
-
-    border: "#E2E8F0",
-
-    placeholder: "#94A3B8",
+    cardElevated: "#F5F3EF",
+    input: "#F0ECE6",
+    primary: "#F37021",
+    primaryLight: "#FF8A3D",
+    primaryDark: "#C8470F",
+    text: "#1C1917",
+    textSecondary: "#78716C",
+    border: "rgba(0, 0, 0, 0.05)",
+    placeholder: "#A8A29E",
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+    info: "#06B6D4",
 };

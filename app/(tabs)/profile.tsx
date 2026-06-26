@@ -5,68 +5,77 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  StatusBar,
+  Dimensions,
   Switch,
-  StatusBar
+  Alert
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import {
-  Edit3,
-  Mail,
-  Phone,
-  School,
-  KeyRound,
-  Trophy,
-  Bell,
-  Globe,
-  Lock,
-  Award,
+  User,
+  Settings,
+  HelpCircle,
   LogOut,
+  ChevronRight,
   Sun,
   Moon,
-  ChevronRight
+  QrCode,
+  Briefcase,
+  Award,
+  ShieldAlert,
+  Globe,
+  Bell,
+  Lock,
+  Edit2
 } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
+import { CURRENT_USER } from "@/constants/mockData";
 
-const HISTORY = [
-  { year: "2026", event: "SEAL Summer", result: "Sprint 2 · #12", badge: "Active" },
-  { year: "2025", event: "FPT CodeWar", result: "1st Place", badge: "Gold" },
-  { year: "2025", event: "AI Hack VN", result: "Top 8 Finalist", badge: "Finalist" },
-  { year: "2024", event: "SEAL Winter", result: "Top 16", badge: "Cert" },
-];
+const { width } = Dimensions.get("window");
 
 export default function ProfileScreen() {
   const { isDark, toggle } = useTheme();
   const { logout } = useAuth();
 
   const colors = {
-    isDark,
-    bg: isDark ? "#0C0A09" : "#F9F6F0",
-    cardBg: isDark ? "rgba(20, 17, 15, 0.75)" : "rgba(255, 255, 255, 0.95)",
-    cardBorder: isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.05)",
-    textPrimary: isDark ? "#FFFFFF" : "#1C1917",
-    textSecondary: isDark ? "#A39690" : "#78716C",
-    textMuted: isDark ? "#57534E" : "#A8A29E",
-    accent: "#f37021",
-    subAccent: "#ff9248",
+    bg: isDark ? "#11100F" : "#F9F6F0",
+    cardBg: isDark ? "#1A1918" : "#FFFFFF",
+    cardElevated: isDark ? "#211F1D" : "#F5F3EF",
+    textPrimary: isDark ? "#F8F7F5" : "#1C1917",
+    textSecondary: isDark ? "#A8A29E" : "#78716C",
+    accent: "#F37021",
+    border: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
+    error: "#EF4444",
   };
 
   const handleLogout = () => {
-    logout();
-    router.replace("/auth/login");
+    Alert.alert(
+      "Đăng xuất",
+      "Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?",
+      [
+        { text: "Hủy", style: "cancel" },
+        { 
+          text: "Đăng xuất", 
+          style: "destructive",
+          onPress: () => {
+            logout();
+            router.replace("/auth/login");
+          }
+        }
+      ]
+    );
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* Screen Header */}
+      {/* Screen Title */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Profile</Text>
-        <TouchableOpacity style={[styles.headerEditBtn, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-          <Edit3 size={16} color={colors.textPrimary} />
-        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Cá nhân</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Quản lý tài khoản và thiết lập</Text>
       </View>
 
       <ScrollView
@@ -74,49 +83,120 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ================= PROFILE CARD ================= */}
-        <View style={[styles.profileCard, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-          {/* Blur glow background */}
-          <View style={[styles.cardGlow, { backgroundColor: colors.accent, opacity: isDark ? 0.1 : 0.03 }]} />
-
-          <View style={styles.avatarSection}>
-            <View style={styles.avatarWrapper}>
-              <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
-                <Text style={styles.avatarText}>JN</Text>
-              </View>
-              <TouchableOpacity style={[styles.avatarEditBtn, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-                <Edit3 size={10} color={colors.textPrimary} />
-              </TouchableOpacity>
+        <View style={[styles.profileCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <View style={styles.profileHeader}>
+            <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
+              <Text style={styles.avatarText}>{CURRENT_USER.avatarInitials}</Text>
             </View>
+            <View style={styles.profileDetails}>
+              <Text style={[styles.profileName, { color: colors.textPrimary }]}>{CURRENT_USER.name}</Text>
+              <Text style={[styles.profileSubText, { color: colors.textSecondary }]}>
+                {CURRENT_USER.uni} · MSSV: {CURRENT_USER.studentId}
+              </Text>
+              <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>
+                {CURRENT_USER.email}
+              </Text>
+            </View>
+          </View>
 
-            <Text style={[styles.profileName, { color: colors.textPrimary }]}>John Nguyen</Text>
-            <Text style={[styles.profileMeta, { color: colors.textSecondary }]}>SE171234 · FPT University HCM</Text>
-            <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>john.nguyen@fpt.edu.vn</Text>
-
-            <View style={styles.badgesRow}>
-              <Badge label="Top 5%" colors={colors} />
-              <Badge label="Sprint Lead" colors={colors} />
-              <Badge label="3 Awards" colors={colors} />
+          {/* Profile completion progress */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressLabelRow}>
+              <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>Hoàn thiện hồ sơ</Text>
+              <Text style={[styles.progressValue, { color: colors.accent }]}>{CURRENT_USER.profileCompletion}%</Text>
+            </View>
+            <View style={[styles.progressBar, { backgroundColor: isDark ? "#2A2826" : "#E5E7EB" }]}>
+              <View style={[styles.progressFill, { width: `${CURRENT_USER.profileCompletion}%`, backgroundColor: colors.accent }]} />
             </View>
           </View>
         </View>
 
-        {/* ================= APPEARANCE SWITCH ================= */}
-        <View style={[styles.settingBlock, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-          <View style={styles.appearanceRow}>
-            <View style={styles.appearanceLeft}>
-              <View style={[styles.settingIconWrapper, { backgroundColor: `${colors.accent}15` }]}>
-                {isDark ? (
-                  <Moon size={16} color={colors.accent} />
-                ) : (
-                  <Sun size={16} color={colors.accent} />
-                )}
-              </View>
-              <View style={styles.settingTextWrapper}>
-                <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>Appearance</Text>
-                <Text style={[styles.settingDesc, { color: colors.textSecondary }]}>
-                  {isDark ? "Dark mode" : "Light mode"}
-                </Text>
-              </View>
+        {/* ================= GROUP: HỒ SƠ CÁ NHÂN ================= */}
+        <Text style={[styles.groupTitle, { color: colors.textSecondary }]}>HỒ SƠ CÁ NHÂN</Text>
+        <View style={[styles.groupBlock, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+            <View style={styles.rowLeft}>
+              <User size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Thông tin cá nhân & Kỹ năng</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.rowItem} activeOpacity={0.7}>
+            <View style={styles.rowLeft}>
+              <Briefcase size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Portfolio, GitHub & LinkedIn</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* ================= GROUP: HOẠT ĐỘNG ================= */}
+        <Text style={[styles.groupTitle, { color: colors.textSecondary }]}>HOẠT ĐỘNG CUỘC THI</Text>
+        <View style={[styles.groupBlock, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <TouchableOpacity 
+            style={[styles.rowItem, { borderBottomColor: colors.border }]} 
+            activeOpacity={0.7}
+            onPress={() => router.push("/(tabs)/competitions")}
+          >
+            <View style={styles.rowLeft}>
+              <Award size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Cuộc thi đã tham gia & Kết quả</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.rowItem, { borderBottomColor: colors.border }]} 
+            activeOpacity={0.7}
+            onPress={() => router.push("/results")}
+          >
+            <View style={styles.rowLeft}>
+              <ShieldAlert size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Nhận xét của Giám khảo (Feedback)</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.rowItem} activeOpacity={0.7}>
+            <View style={styles.rowLeft}>
+              <Award size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Chứng nhận & Lịch sử check-in</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* ================= GROUP: PARTICIPANT PASS ================= */}
+        <Text style={[styles.groupTitle, { color: colors.textSecondary }]}>THẺ ĐỒNG HÀNH (PASS)</Text>
+        <View style={[styles.groupBlock, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <TouchableOpacity 
+            style={styles.rowItem} 
+            activeOpacity={0.7}
+            onPress={() => router.push("/participant-pass")}
+          >
+            <View style={styles.rowLeft}>
+              <QrCode size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Mở QR Participant Pass</Text>
+            </View>
+            <View style={styles.rowRight}>
+              <Text style={[styles.badgeTextText, { color: colors.textSecondary }]}>SEAL-2026</Text>
+              <ChevronRight size={16} color={colors.textSecondary} style={{ marginLeft: 6 }} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* ================= GROUP: THIẾT LẬP ================= */}
+        <Text style={[styles.groupTitle, { color: colors.textSecondary }]}>THIẾT LẬP HỆ THỐNG</Text>
+        <View style={[styles.groupBlock, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <View style={[styles.rowItem, { borderBottomColor: colors.border }]}>
+            <View style={styles.rowLeft}>
+              {isDark ? (
+                <Moon size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              ) : (
+                <Sun size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              )}
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Chế độ giao diện tối (Dark Mode)</Text>
             </View>
             <Switch
               value={isDark}
@@ -125,151 +205,99 @@ export default function ProfileScreen() {
               thumbColor="#f4f3f4"
             />
           </View>
-        </View>
 
-        {/* ================= PERSONAL INFO ================= */}
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Personal information</Text>
-        <View style={[styles.listBlock, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-          <InfoRow icon={Mail} label="Email" value="john.nguyen@fpt.edu.vn" colors={colors} />
-          <InfoRow icon={Phone} label="Phone" value="+84 901 234 567" colors={colors} />
-          <InfoRow icon={School} label="University" value="FPT University HCM" colors={colors} />
-          <InfoRow icon={KeyRound} label="Student ID" value="SE171234" colors={colors} last={true} />
-        </View>
-
-        {/* ================= COMPETITION HISTORY ================= */}
-        <View style={styles.sectionHeaderWrapper}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Competition history</Text>
-          <Text style={[styles.historyCount, { color: colors.textSecondary }]}>{HISTORY.length} events</Text>
-        </View>
-
-        <View style={styles.historyList}>
-          {HISTORY.map((h) => (
-            <View
-              key={h.event + h.year}
-              style={[styles.historyCard, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
-            >
-              <View style={[styles.historyIconWrapper, { backgroundColor: `${colors.accent}15` }]}>
-                <Trophy size={18} color={colors.accent} />
-              </View>
-
-              <View style={styles.historyContent}>
-                <View style={styles.historyTitleRow}>
-                  <View style={[styles.historyYearBadge, { backgroundColor: isDark ? "#292524" : "#E7E5E4" }]}>
-                    <Text style={[styles.historyYear, { color: colors.textPrimary }]}>{h.year}</Text>
-                  </View>
-                  <Text style={[styles.historyEventName, { color: colors.textPrimary }]} numberOfLines={1}>
-                    {h.event}
-                  </Text>
-                </View>
-                <Text style={[styles.historyResult, { color: colors.textSecondary }]}>{h.result}</Text>
-              </View>
-
-              <View style={[styles.historyBadge, { backgroundColor: colors.accent }]}>
-                <Text style={styles.historyBadgeText}>{h.badge}</Text>
-              </View>
+          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+            <View style={styles.rowLeft}>
+              <Bell size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Cài đặt thông báo (Push & Email)</Text>
             </View>
-          ))}
-        </View>
-
-        {/* ================= SETTINGS ================= */}
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Settings</Text>
-        <View style={[styles.listBlock, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-          <SettingRow icon={Bell} label="Notifications" hint="Push · Email · In-app" colors={colors} />
-          <SettingRow icon={Globe} label="Language" hint="English" colors={colors} />
-          <SettingRow icon={Lock} label="Privacy" hint="Public profile" colors={colors} />
-          <SettingRow icon={Award} label="Certificates" hint="3 issued" colors={colors} last={true} />
-        </View>
-
-        {/* ================= ACCOUNT ACTIONS ================= */}
-        <View style={styles.accountActions}>
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Change password</Text>
+            <ChevronRight size={16} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.actionBtnDanger, { borderColor: "rgba(239, 68, 68, 0.2)" }]}
-            activeOpacity={0.8}
-            onPress={handleLogout}
+          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+            <View style={styles.rowLeft}>
+              <Globe size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Ngôn ngữ</Text>
+            </View>
+            <View style={styles.rowRight}>
+              <Text style={[styles.badgeTextText, { color: colors.textSecondary }]}>Tiếng Việt</Text>
+              <ChevronRight size={16} color={colors.textSecondary} style={{ marginLeft: 6 }} />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+            <View style={styles.rowLeft}>
+              <Lock size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Quyền riêng tư & Thiết bị</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.rowItem} 
+            activeOpacity={0.7}
+            onPress={() => router.push("/state-showcase")}
           >
-            <LogOut size={16} color="#ef4444" />
-            <Text style={[styles.actionBtnText, { color: "#ef4444" }]}>Log out</Text>
+            <View style={styles.rowLeft}>
+              <Award size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary, fontWeight: "700" }]}>State Showcase (Demo UX)</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
+
+        {/* ================= GROUP: HỖ TRỢ ================= */}
+        <Text style={[styles.groupTitle, { color: colors.textSecondary }]}>HỖ TRỢ & LIÊN HỆ</Text>
+        <View style={[styles.groupBlock, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+            <View style={styles.rowLeft}>
+              <HelpCircle size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Câu hỏi thường gặp (FAQ)</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+            <View style={styles.rowLeft}>
+              <Edit2 size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Báo cáo sự cố hoặc ý kiến đóng góp</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.rowItem, { borderBottomColor: colors.border }]} 
+            activeOpacity={0.7}
+            onPress={() => Alert.alert("Liên hệ BTC", "Email: seal.hcm@fpt.edu.vn\nHotline: 0901 234 567")}
+          >
+            <View style={styles.rowLeft}>
+              <User size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Liên hệ ban tổ chức</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.rowItem} activeOpacity={0.7}>
+            <View style={styles.rowLeft}>
+              <Lock size={16} color={colors.accent} style={{ marginRight: 12 }} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Điều khoản & Chính sách bảo mật</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* ================= LOGOUT BUTTON ================= */}
+        <TouchableOpacity 
+          style={[styles.logoutBtn, { borderColor: `${colors.error}35`, backgroundColor: colors.cardBg }]}
+          activeOpacity={0.8}
+          onPress={handleLogout}
+        >
+          <LogOut size={18} color={colors.error} style={{ marginRight: 10 }} />
+          <Text style={[styles.logoutBtnText, { color: colors.error }]}>Đăng xuất tài khoản</Text>
+        </TouchableOpacity>
+
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-// Sub-Component: Badge
-function Badge({ label, colors }: { label: string; colors: any }) {
-  return (
-    <View style={[styles.badge, { backgroundColor: `${colors.accent}15` }]}>
-      <Text style={[styles.badgeText, { color: colors.accent }]}>{label}</Text>
-    </View>
-  );
-}
-
-// Sub-Component: Personal Info Row
-function InfoRow({
-  icon: IconComponent,
-  label,
-  value,
-  colors,
-  last
-}: {
-  icon: any;
-  label: string;
-  value: string;
-  colors: any;
-  last?: boolean;
-}) {
-  return (
-    <View style={[styles.infoRow, !last && { borderBottomWidth: 1, borderBottomColor: colors.cardBorder }]}>
-      <View style={[styles.settingIconWrapper, { backgroundColor: colors.isDark ? "#292524" : "#E7E5E4" }]}>
-        <IconComponent size={16} color={colors.accent} />
-      </View>
-      <View style={styles.infoTextWrapper}>
-        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{label}</Text>
-        <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{value}</Text>
-      </View>
-    </View>
-  );
-}
-
-// Sub-Component: Setting Navigation Row
-function SettingRow({
-  icon: IconComponent,
-  label,
-  hint,
-  colors,
-  last
-}: {
-  icon: any;
-  label: string;
-  hint: string;
-  colors: any;
-  last?: boolean;
-}) {
-  return (
-    <TouchableOpacity
-      style={[
-        styles.settingRow,
-        !last && { borderBottomWidth: 1, borderBottomColor: colors.cardBorder }
-      ]}
-      activeOpacity={0.7}
-    >
-      <View style={[styles.settingIconWrapper, { backgroundColor: colors.isDark ? "#292524" : "#E7E5E4" }]}>
-        <IconComponent size={16} color={colors.accent} />
-      </View>
-      <View style={styles.infoTextWrapper}>
-        <Text style={[styles.settingRowTitle, { color: colors.textPrimary }]}>{label}</Text>
-        <Text style={[styles.settingRowHint, { color: colors.textSecondary }]}>{hint}</Text>
-      </View>
-      <ChevronRight size={16} color={colors.textSecondary} />
-    </TouchableOpacity>
   );
 }
 
@@ -278,265 +306,138 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 16,
+    paddingBottom: 12,
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "900",
-    letterSpacing: -0.3,
+    fontWeight: "800",
   },
-  headerEditBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  headerSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 110,
-    gap: 16,
   },
   profileCard: {
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 20,
-    position: "relative",
-    overflow: "hidden",
+    padding: 16,
+    marginBottom: 20,
   },
-  cardGlow: {
-    position: "absolute",
-    right: -20,
-    top: -20,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-  },
-  avatarSection: {
+  profileHeader: {
+    flexDirection: "row",
     alignItems: "center",
-  },
-  avatarWrapper: {
-    position: "relative",
-    marginBottom: 12,
+    gap: 14,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#f37021",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 5,
   },
   avatarText: {
     color: "#FFFFFF",
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "900",
   },
-  avatarEditBtn: {
-    position: "absolute",
-    bottom: -4,
-    right: -4,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  profileDetails: {
+    flex: 1,
   },
   profileName: {
-    fontSize: 20,
-    fontWeight: "900",
+    fontSize: 18,
+    fontWeight: "800",
   },
-  profileMeta: {
+  profileSubText: {
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 2,
   },
   profileEmail: {
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 1,
   },
-  badgesRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 14,
+  progressContainer: {
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.03)",
+    paddingTop: 14,
   },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 99,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: "800",
-  },
-  settingBlock: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 16,
-  },
-  appearanceRow: {
+  progressLabelRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 8,
   },
-  appearanceLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+  progressLabel: {
+    fontSize: 12,
+    fontWeight: "500",
   },
-  settingIconWrapper: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  settingTextWrapper: {
-    marginLeft: 12,
-  },
-  settingTitle: {
-    fontSize: 14,
+  progressValue: {
+    fontSize: 12,
     fontWeight: "700",
   },
-  settingDesc: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    marginTop: 8,
-  },
-  listBlock: {
-    borderRadius: 24,
-    borderWidth: 1,
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
     overflow: "hidden",
   },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
+  progressFill: {
+    height: "100%",
+    borderRadius: 3,
   },
-  infoTextWrapper: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  infoLabel: {
-    fontSize: 9,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  infoValue: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginTop: 2,
-  },
-  sectionHeaderWrapper: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    marginTop: 8,
-  },
-  historyCount: {
-    fontSize: 11,
-  },
-  historyList: {
-    gap: 10,
-  },
-  historyCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 12,
-  },
-  historyIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  historyContent: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: "center",
-  },
-  historyTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  historyYearBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  historyYear: {
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  historyEventName: {
-    fontSize: 13,
-    fontWeight: "600",
-    flex: 1,
-  },
-  historyResult: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-  historyBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 99,
-  },
-  historyBadgeText: {
-    color: "#FFFFFF",
+  groupTitle: {
     fontSize: 10,
     fontWeight: "800",
+    letterSpacing: 1,
+    marginBottom: 8,
+    marginLeft: 4,
   },
-  settingRow: {
+  groupBlock: {
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: "hidden",
+    marginBottom: 20,
+  },
+  rowItem: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     padding: 14,
+    borderBottomWidth: 1,
   },
-  settingRowTitle: {
+  rowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  rowText: {
     fontSize: 13,
     fontWeight: "600",
   },
-  settingRowHint: {
-    fontSize: 10,
-    marginTop: 2,
+  rowRight: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  accountActions: {
-    gap: 10,
-    marginTop: 8,
+  badgeTextText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
-  actionBtn: {
-    height: 48,
+  logoutBtn: {
     borderRadius: 16,
     borderWidth: 1,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
-    gap: 8,
+    marginTop: 10,
+    marginBottom: 20,
   },
-  actionBtnDanger: {
-    backgroundColor: "rgba(239, 68, 68, 0.05)",
-  },
-  actionBtnText: {
+  logoutBtnText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });

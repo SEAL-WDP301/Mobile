@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { View, StyleSheet, Platform, Dimensions } from "react-native";
+import { View, StyleSheet, Platform, Dimensions, Text } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/constants/theme/useTheme";
 
@@ -8,20 +8,20 @@ const { width } = Dimensions.get("window");
 export default function TabsLayout() {
   const { isDark } = useTheme();
 
-  // Color palette synchronized with current theme
+  // Color palette synchronized with dark/light themes
   const colors = {
-    bg: isDark ? "#0C0A09" : "#F9F6F0",
-    navBg: isDark ? "rgba(20, 17, 15, 0.85)" : "rgba(255, 255, 255, 0.9)",
-    navBorder: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
-    textActive: "#f37021", // Brand Orange
-    textInactive: isDark ? "#A39690" : "#78716C",
+    bg: isDark ? "#11100F" : "#F9F6F0",
+    navBg: isDark ? "rgba(26, 25, 24, 0.95)" : "rgba(255, 255, 255, 0.95)",
+    navBorder: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
+    textActive: "#F37021", // Brand Orange
+    textInactive: isDark ? "#A8A29E" : "#78716C",
   };
 
   return (
     <View style={[styles.wrapper, { backgroundColor: colors.bg }]}>
-      {/* BACKGROUND BLUR GLOWS */}
-      <View style={[styles.glowTop, { backgroundColor: "#f37021", opacity: isDark ? 0.15 : 0.05 }]} />
-      <View style={[styles.glowBottom, { backgroundColor: "#ff9248", opacity: isDark ? 0.12 : 0.04 }]} />
+      {/* Background ambient glows (subtle decorative) */}
+      <View style={[styles.glowTop, { backgroundColor: "#F37021", opacity: isDark ? 0.08 : 0.02 }]} />
+      <View style={[styles.glowBottom, { backgroundColor: "#FF8A3D", opacity: isDark ? 0.06 : 0.01 }]} />
 
       <Tabs
         screenOptions={{
@@ -38,80 +38,94 @@ export default function TabsLayout() {
               ...Platform.select({
                 ios: {
                   shadowColor: "#000000",
-                  shadowOffset: { width: 0, height: 10 },
-                  shadowOpacity: isDark ? 0.5 : 0.15,
-                  shadowRadius: 20,
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: isDark ? 0.4 : 0.1,
+                  shadowRadius: 16,
                 },
                 android: {
-                  elevation: 8,
+                  elevation: 6,
                 },
               }),
             },
           ],
         }}
       >
-        {/* TAB 1: HOME */}
+        {/* TAB 1: TRANG CHỦ */}
         <Tabs.Screen
           name="index"
           options={{
-            title: "Home",
+            title: "Trang chủ",
             tabBarIcon: ({ focused, color }) => (
               <View style={[styles.iconContainer, focused && styles.iconActive]}>
-                <Feather name="home" size={18} color={focused ? "#FFFFFF" : color} />
+                <Feather name="home" size={18} color={focused ? "#F8F7F5" : color} />
               </View>
             ),
           }}
         />
 
-        {/* TAB 2: TEAMS */}
+        {/* TAB 2: CUỘC THI */}
+        <Tabs.Screen
+          name="competitions"
+          options={{
+            title: "Cuộc thi",
+            tabBarIcon: ({ focused, color }) => (
+              <View style={[styles.iconContainer, focused && styles.iconActive]}>
+                <Feather name="award" size={18} color={focused ? "#F8F7F5" : color} />
+              </View>
+            ),
+          }}
+        />
+
+        {/* TAB 3: LỊCH TRÌNH */}
+        <Tabs.Screen
+          name="schedule"
+          options={{
+            title: "Lịch trình",
+            tabBarIcon: ({ focused, color }) => (
+              <View style={[styles.iconContainer, focused && styles.iconActive]}>
+                <Feather name="calendar" size={18} color={focused ? "#F8F7F5" : color} />
+              </View>
+            ),
+          }}
+        />
+
+        {/* TAB 4: ĐỘI */}
         <Tabs.Screen
           name="teams"
           options={{
-            title: "Teams",
+            title: "Đội nhóm",
             tabBarIcon: ({ focused, color }) => (
               <View style={[styles.iconContainer, focused && styles.iconActive]}>
-                <Feather name="users" size={18} color={focused ? "#FFFFFF" : color} />
+                <Feather name="users" size={18} color={focused ? "#F8F7F5" : color} />
               </View>
             ),
           }}
         />
 
-        {/* TAB 3: MENTORS */}
-        <Tabs.Screen
-          name="mentors"
-          options={{
-            title: "Mentors",
-            tabBarIcon: ({ focused, color }) => (
-              <View style={[styles.iconContainer, focused && styles.iconActive]}>
-                <Feather name="award" size={18} color={focused ? "#FFFFFF" : color} />
-              </View>
-            ),
-          }}
-        />
-
-        {/* TAB 4: NOTIFICATIONS */}
-        <Tabs.Screen
-          name="notifications"
-          options={{
-            title: "Alerts",
-            tabBarIcon: ({ focused, color }) => (
-              <View style={[styles.iconContainer, focused && styles.iconActive]}>
-                <Feather name="bell" size={18} color={focused ? "#FFFFFF" : color} />
-              </View>
-            ),
-          }}
-        />
-
-        {/* TAB 5: PROFILE */}
+        {/* TAB 5: CÁ NHÂN */}
         <Tabs.Screen
           name="profile"
           options={{
-            title: "Profile",
+            title: "Cá nhân",
             tabBarIcon: ({ focused, color }) => (
               <View style={[styles.iconContainer, focused && styles.iconActive]}>
-                <Feather name="user" size={18} color={focused ? "#FFFFFF" : color} />
+                <Feather name="user" size={18} color={focused ? "#F8F7F5" : color} />
               </View>
             ),
+          }}
+        />
+
+        {/* HIDE DEPRECATED TABS */}
+        <Tabs.Screen
+          name="mentors"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="notifications"
+          options={{
+            href: null,
           }}
         />
       </Tabs>
@@ -126,20 +140,20 @@ const styles = StyleSheet.create({
   },
   glowTop: {
     position: "absolute",
-    top: -140,
-    left: width / 2 - 230,
-    width: 460,
-    height: 460,
-    borderRadius: 230,
+    top: -150,
+    left: width / 2 - 200,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
     pointerEvents: "none",
   },
   glowBottom: {
     position: "absolute",
-    bottom: -100,
-    right: -100,
-    width: 380,
-    height: 380,
-    borderRadius: 190,
+    bottom: -80,
+    right: -80,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
     pointerEvents: "none",
   },
   tabBar: {
@@ -150,27 +164,29 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     borderWidth: 1,
-    paddingBottom: Platform.OS === "ios" ? 4 : 8,
+    paddingBottom: Platform.OS === "ios" ? 6 : 8,
     paddingTop: 8,
   },
   tabLabel: {
-    fontSize: 10,
-    fontWeight: "600",
+    fontSize: 9,
+    fontWeight: "700",
     marginTop: 2,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
   },
   iconContainer: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
   },
   iconActive: {
-    backgroundColor: "#f37021",
-    shadowColor: "#f37021",
+    backgroundColor: "#F37021",
+    shadowColor: "#F37021",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
 });

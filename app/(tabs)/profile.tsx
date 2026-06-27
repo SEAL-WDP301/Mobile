@@ -31,13 +31,25 @@ import {
 } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
-import { CURRENT_USER } from "@/constants/mockData";
+import { useLocale } from "@/contexts/LocaleContext";
+import {
+  computeProfileCompletion,
+  getInitials,
+} from "@/utils/format";
 
 const { width } = Dimensions.get("window");
 
 export default function ProfileScreen() {
   const { isDark, toggle } = useTheme();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const { t, localeLabel } = useLocale();
+
+  const displayName = user?.name ?? "—";
+  const displayEmail = user?.email ?? "—";
+  const studentId = user?.studentProfile?.studentCode ?? "—";
+  const university = user?.studentProfile?.universityName ?? "Chưa cập nhật";
+  const avatarInitials = getInitials(displayName);
+  const profileCompletion = user ? computeProfileCompletion(user) : 0;
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -59,8 +71,8 @@ export default function ProfileScreen() {
         { 
           text: "Đăng xuất", 
           style: "destructive",
-          onPress: () => {
-            logout();
+          onPress: async () => {
+            await logout();
             router.replace("/auth/login");
           }
         }
@@ -74,8 +86,8 @@ export default function ProfileScreen() {
 
       {/* Screen Title */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Cá nhân</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Quản lý tài khoản và thiết lập</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t.profile.title}</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>{t.profile.subtitle}</Text>
       </View>
 
       <ScrollView
@@ -86,15 +98,15 @@ export default function ProfileScreen() {
         <View style={[styles.profileCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
           <View style={styles.profileHeader}>
             <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
-              <Text style={styles.avatarText}>{CURRENT_USER.avatarInitials}</Text>
+              <Text style={styles.avatarText}>{avatarInitials}</Text>
             </View>
             <View style={styles.profileDetails}>
-              <Text style={[styles.profileName, { color: colors.textPrimary }]}>{CURRENT_USER.name}</Text>
+              <Text style={[styles.profileName, { color: colors.textPrimary }]}>{displayName}</Text>
               <Text style={[styles.profileSubText, { color: colors.textSecondary }]}>
-                {CURRENT_USER.uni} · MSSV: {CURRENT_USER.studentId}
+                {university} · MSSV: {studentId}
               </Text>
               <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>
-                {CURRENT_USER.email}
+                {displayEmail}
               </Text>
             </View>
           </View>
@@ -103,10 +115,10 @@ export default function ProfileScreen() {
           <View style={styles.progressContainer}>
             <View style={styles.progressLabelRow}>
               <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>Hoàn thiện hồ sơ</Text>
-              <Text style={[styles.progressValue, { color: colors.accent }]}>{CURRENT_USER.profileCompletion}%</Text>
+              <Text style={[styles.progressValue, { color: colors.accent }]}>{profileCompletion}%</Text>
             </View>
             <View style={[styles.progressBar, { backgroundColor: isDark ? "#2A2826" : "#E5E7EB" }]}>
-              <View style={[styles.progressFill, { width: `${CURRENT_USER.profileCompletion}%`, backgroundColor: colors.accent }]} />
+              <View style={[styles.progressFill, { width: `${profileCompletion}%`, backgroundColor: colors.accent }]} />
             </View>
           </View>
         </View>
@@ -114,18 +126,26 @@ export default function ProfileScreen() {
         {/* ================= GROUP: HỒ SƠ CÁ NHÂN ================= */}
         <Text style={[styles.groupTitle, { color: colors.textSecondary }]}>HỒ SƠ CÁ NHÂN</Text>
         <View style={[styles.groupBlock, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.rowItem, { borderBottomColor: colors.border }]}
+            activeOpacity={0.7}
+            onPress={() => router.push("/profile/personal-info")}
+          >
             <View style={styles.rowLeft}>
               <User size={16} color={colors.accent} style={{ marginRight: 12 }} />
-              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Thông tin cá nhân & Kỹ năng</Text>
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>{t.profile.personalInfo}</Text>
             </View>
             <ChevronRight size={16} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.rowItem} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.rowItem}
+            activeOpacity={0.7}
+            onPress={() => router.push("/profile/portfolio-links")}
+          >
             <View style={styles.rowLeft}>
               <Briefcase size={16} color={colors.accent} style={{ marginRight: 12 }} />
-              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Portfolio, GitHub & LinkedIn</Text>
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>{t.profile.portfolio}</Text>
             </View>
             <ChevronRight size={16} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -214,13 +234,17 @@ export default function ProfileScreen() {
             <ChevronRight size={16} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.rowItem, { borderBottomColor: colors.border }]}
+            activeOpacity={0.7}
+            onPress={() => router.push("/profile/language")}
+          >
             <View style={styles.rowLeft}>
               <Globe size={16} color={colors.accent} style={{ marginRight: 12 }} />
-              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Ngôn ngữ</Text>
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>{t.profile.language}</Text>
             </View>
             <View style={styles.rowRight}>
-              <Text style={[styles.badgeTextText, { color: colors.textSecondary }]}>Tiếng Việt</Text>
+              <Text style={[styles.badgeTextText, { color: colors.textSecondary }]}>{localeLabel}</Text>
               <ChevronRight size={16} color={colors.textSecondary} style={{ marginLeft: 6 }} />
             </View>
           </TouchableOpacity>
@@ -277,10 +301,14 @@ export default function ProfileScreen() {
             <ChevronRight size={16} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.rowItem} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.rowItem}
+            activeOpacity={0.7}
+            onPress={() => router.push("/profile/legal")}
+          >
             <View style={styles.rowLeft}>
               <Lock size={16} color={colors.accent} style={{ marginRight: 12 }} />
-              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Điều khoản & Chính sách bảo mật</Text>
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>{t.profile.legal}</Text>
             </View>
             <ChevronRight size={16} color={colors.textSecondary} />
           </TouchableOpacity>

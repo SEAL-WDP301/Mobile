@@ -26,16 +26,40 @@ import {
   X
 } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
-import { TEAM_MEMBERS, MOCK_MENTOR } from "@/constants/mockData";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEventContext } from "@/contexts/EventContext";
+import { useTeamStatus } from "@/hooks/useTeamStatus";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { getInitials, mapTeamRoleLabel } from "@/utils/format";
 
 const { width } = Dimensions.get("window");
 
 export default function TeamsScreen() {
   const { isDark } = useTheme();
-  
-  // Custom states
-  const [hasTeam, setHasTeam] = useState(true);
+  const { user } = useAuth();
+  const { selectedEventId } = useEventContext();
+  const { data: teamStatus, loading } = useTeamStatus(selectedEventId);
+  const { data: workspace } = useWorkspace(selectedEventId);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+
+  const team = teamStatus?.teamInfo?.team;
+  const hasTeam = !!team;
+  const members = team?.members?.filter((m) => m.status === "accepted") ?? [];
+  const mentor = team?.mentorAssignments?.[0]?.mentor;
+  const mentorProfile = mentor?.stakeholderProfile;
+  const teamName = team?.name ?? "—";
+  const trackName = team?.track?.name ?? "—";
+  const teamInitials = getInitials(teamName);
+  const isApproved = team?.status === "approved";
+  const hasSubmission = !!workspace?.latestSubmission;
+
+  const checklistItems = [
+    { label: "Đủ số lượng thành viên (tối thiểu 3)", status: members.length >= 3 },
+    { label: "Tất cả thành viên đã xác nhận", status: members.every((m) => m.status === "accepted") },
+    { label: `Đã chọn track thi đấu (${trackName})`, status: !!team?.track },
+    { label: "Hồ sơ đội thi hợp lệ", status: isApproved },
+    { label: "Đã nộp bài giải pháp", status: hasSubmission },
+  ];
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -50,14 +74,6 @@ export default function TeamsScreen() {
     error: "#EF4444",
   };
 
-  const checklistItems = [
-    { label: "Đủ số lượng thành viên (tối thiểu 3)", status: true },
-    { label: "Tất cả thành viên đã xác nhận", status: true },
-    { label: "Đã chọn track thi đấu (AI for Education)", status: true },
-    { label: "Hồ sơ đội thi hợp lệ", status: true },
-    { label: "Đã nộp bài giải pháp Round 1", status: true },
-  ];
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
@@ -68,16 +84,6 @@ export default function TeamsScreen() {
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Đội nhóm</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Quản lý thông tin và tiến độ của đội</Text>
         </View>
-        
-        {/* Simple toggle to test "No Team" state */}
-        <TouchableOpacity 
-          style={[styles.demoBtn, { borderColor: colors.border }]} 
-          onPress={() => setHasTeam(!hasTeam)}
-        >
-          <Text style={[styles.demoBtnText, { color: colors.textSecondary }]}>
-            {hasTeam ? "Demo: Không Đội" : "Demo: Có Đội"}
-          </Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -90,22 +96,24 @@ export default function TeamsScreen() {
             <View style={[styles.teamCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
               <View style={styles.teamCardHeader}>
                 <View style={[styles.teamAvatar, { backgroundColor: colors.accent }]}>
-                  <Text style={styles.teamAvatarText}>TP</Text>
+                  <Text style={styles.teamAvatarText}>{teamInitials}</Text>
                 </View>
                 <View style={styles.teamCardDetails}>
                   <View style={styles.teamNameRow}>
-                    <Text style={[styles.teamName, { color: colors.textPrimary }]}>Team Phoenix</Text>
+                    <Text style={[styles.teamName, { color: colors.textPrimary }]}>{teamName}</Text>
                     <Crown size={16} color={colors.accent} style={{ marginLeft: 6 }} />
                   </View>
                   <Text style={[styles.teamTrack, { color: colors.textSecondary }]}>
-                    AI for Education · 4 thành viên
+                    {trackName} · {members.length} thành viên
                   </Text>
                   <View style={styles.badgeRow}>
-                    <View style={[styles.statusBadge, { backgroundColor: `${colors.success}15` }]}>
-                      <Text style={[styles.statusBadgeText, { color: colors.success }]}>ĐỦ ĐIỀU KIỆN</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: `${isApproved ? colors.success : colors.warning}15` }]}>
+                      <Text style={[styles.statusBadgeText, { color: isApproved ? colors.success : colors.warning }]}>
+                        {team?.status?.toUpperCase() ?? "PENDING"}
+                      </Text>
                     </View>
                     <Text style={[styles.teamCodeText, { color: colors.textSecondary }]}>
-                      Mã: <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>SEAL-PHE92</Text>
+                      ID: <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>{team?.id ?? "—"}</Text>
                     </Text>
                   </View>
                 </View>
@@ -128,50 +136,45 @@ export default function TeamsScreen() {
             </View>
 
             {/* ================= MEMBERS ================= */}
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>THÀNH VIÊN ({TEAM_MEMBERS.length})</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>THÀNH VIÊN ({members.length})</Text>
             <View style={[styles.membersCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-              {TEAM_MEMBERS.map((member, idx) => (
+              {members.map((member, idx) => {
+                const isYou = member.user.email === user?.email;
+                const initials = getInitials(member.user.name);
+                const isLeader = member.role === "leader";
+                return (
                 <View 
                   key={idx} 
                   style={[
                     styles.memberRow, 
-                    idx !== TEAM_MEMBERS.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }
+                    idx !== members.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }
                   ]}
                 >
                   <View style={styles.memberAvatarWrapper}>
                     <View style={[styles.memberAvatar, { backgroundColor: colors.cardElevated }]}>
-                      <Text style={[styles.memberAvatarText, { color: colors.textPrimary }]}>{member.initials}</Text>
+                      <Text style={[styles.memberAvatarText, { color: colors.textPrimary }]}>{initials}</Text>
                     </View>
-                    <View 
-                      style={[
-                        styles.statusDot, 
-                        { 
-                          backgroundColor: member.status === "Online" ? colors.success : (member.status === "Idle" ? colors.warning : colors.textSecondary),
-                          borderColor: colors.cardBg
-                        }
-                      ]} 
-                    />
                   </View>
 
                   <View style={styles.memberInfo}>
                     <View style={styles.memberNameRow}>
-                      <Text style={[styles.memberName, { color: colors.textPrimary }]}>{member.name}</Text>
-                      {member.you && (
+                      <Text style={[styles.memberName, { color: colors.textPrimary }]}>{member.user.name}</Text>
+                      {isYou && (
                         <View style={[styles.youBadge, { backgroundColor: `${colors.accent}15` }]}>
                           <Text style={[styles.youBadgeText, { color: colors.accent }]}>BẠN</Text>
                         </View>
                       )}
                     </View>
                     <Text style={[styles.memberSubText, { color: colors.textSecondary }]}>
-                      {member.role} · {member.uni}
+                      {mapTeamRoleLabel(member.role)} · {member.user.email}
                     </Text>
                   </View>
 
-                  {member.role.includes("Leader") && (
+                  {isLeader && (
                     <Crown size={14} color={colors.accent} />
                   )}
                 </View>
-              ))}
+              );})}
             </View>
 
             {/* ================= WARNING/ALERT BOX ================= */}
@@ -184,39 +187,27 @@ export default function TeamsScreen() {
 
             {/* ================= MENTOR CARD ================= */}
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>MENTOR CỦA ĐỘI</Text>
+            {mentor ? (
             <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
               <View style={styles.mentorHeader}>
                 <View style={[styles.mentorAvatarLarge, { backgroundColor: colors.accent }]}>
-                  <Text style={styles.mentorAvatarTextLarge}>AN</Text>
+                  <Text style={styles.mentorAvatarTextLarge}>{getInitials(mentor.name)}</Text>
                 </View>
                 <View style={styles.mentorDetails}>
                   <View style={styles.mentorNameRow}>
-                    <Text style={[styles.mentorNameText, { color: colors.textPrimary }]}>{MOCK_MENTOR.name}</Text>
-                    <View style={styles.ratingRow}>
-                      <Star size={12} color={colors.accent} fill={colors.accent} />
-                      <Text style={[styles.ratingText, { color: colors.accent }]}>{MOCK_MENTOR.rating}</Text>
-                    </View>
+                    <Text style={[styles.mentorNameText, { color: colors.textPrimary }]}>{mentor.name}</Text>
                   </View>
                   <Text style={[styles.mentorPosition, { color: colors.textSecondary }]}>
-                    {MOCK_MENTOR.position} · {MOCK_MENTOR.org}
+                    {mentorProfile?.jobTitle ?? "Mentor"} · {mentorProfile?.organization ?? ""}
                   </Text>
                 </View>
               </View>
 
-              <View style={styles.mentorExpertiseContainer}>
-                {MOCK_MENTOR.expertise.slice(0, 2).map((exp, idx) => (
-                  <View key={idx} style={[styles.expertBadge, { backgroundColor: colors.cardElevated }]}>
-                    <Text style={[styles.expertBadgeText, { color: colors.textSecondary }]}>{exp}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {MOCK_MENTOR.nextAppointment && (
-                <View style={[styles.appointmentBox, { backgroundColor: colors.cardElevated }]}>
-                  <Text style={[styles.appointmentLabel, { color: colors.textSecondary }]}>Cuộc hẹn sắp tới:</Text>
-                  <Text style={[styles.appointmentValue, { color: colors.textPrimary }]}>{MOCK_MENTOR.nextAppointment}</Text>
-                </View>
-              )}
+              {mentorProfile?.bio ? (
+                <Text style={[styles.mentorPosition, { color: colors.textSecondary, marginTop: 8 }]}>
+                  {mentorProfile.bio}
+                </Text>
+              ) : null}
 
               <TouchableOpacity 
                 style={[styles.activityActionBtn, { backgroundColor: colors.cardElevated, marginTop: 12 }]}
@@ -227,6 +218,11 @@ export default function TeamsScreen() {
                 <ChevronRight size={16} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
+            ) : (
+              <Text style={[styles.headerSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
+                Chưa có mentor được phân công.
+              </Text>
+            )}
 
             {/* ================= ACTIONS ================= */}
             <View style={styles.actionsRow}>
@@ -306,7 +302,7 @@ export default function TeamsScreen() {
                 style={[styles.modalBtnConfirm, { backgroundColor: colors.error }]}
                 onPress={() => {
                   setShowLeaveModal(false);
-                  setHasTeam(false);
+                  Alert.alert("Thông báo", "Rời đội hiện thực hiện trên SEAL Web. API mobile chưa hỗ trợ.");
                 }}
               >
                 <Text style={styles.modalBtnConfirmText}>Đồng ý rời</Text>

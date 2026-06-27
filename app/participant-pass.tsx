@@ -12,12 +12,24 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ChevronLeft, QrCode, ShieldAlert, Copy, RefreshCw } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
-import { CURRENT_USER } from "@/constants/mockData";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSelectedEvent } from "@/contexts/EventContext";
+import { getInitials } from "@/utils/format";
 
 const { width } = Dimensions.get("window");
 
 export default function ParticipantPassScreen() {
   const { isDark } = useTheme();
+  const { user } = useAuth();
+  const selectedEvent = useSelectedEvent();
+
+  const displayName = user?.name ?? "—";
+  const studentId = user?.studentProfile?.studentCode ?? "—";
+  const university = user?.studentProfile?.universityName ?? "—";
+  const teamName = selectedEvent?.teamName ?? "—";
+  const passId = selectedEvent
+    ? `SEAL-${selectedEvent.event.year}-${String(selectedEvent.teamId).padStart(4, "0")}`
+    : "SEAL-PASS";
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -31,7 +43,7 @@ export default function ParticipantPassScreen() {
   };
 
   const handleCopyPassId = () => {
-    Alert.alert("Sao chép", "Đã sao chép mã số thẻ thành công: SEAL-2026-PT83");
+    Alert.alert("Sao chép", `Đã sao chép mã số thẻ: ${passId}`);
   };
 
   return (
@@ -82,10 +94,12 @@ export default function ParticipantPassScreen() {
 
           {/* Participant Info */}
           <View style={styles.passDetails}>
-            <Text style={[styles.passRoleLabel, { color: colors.accent }]}>TEAM LEADER</Text>
-            <Text style={[styles.passNameText, { color: colors.textPrimary }]}>{CURRENT_USER.name}</Text>
+            <Text style={[styles.passRoleLabel, { color: colors.accent }]}>
+              {selectedEvent?.event.name?.toUpperCase() ?? "SEAL"}
+            </Text>
+            <Text style={[styles.passNameText, { color: colors.textPrimary }]}>{displayName}</Text>
             <Text style={[styles.passUniText, { color: colors.textSecondary }]}>
-              {CURRENT_USER.uni} · MSSV: {CURRENT_USER.studentId}
+              {university} · MSSV: {studentId}
             </Text>
 
             <View style={styles.divider} />
@@ -93,11 +107,11 @@ export default function ParticipantPassScreen() {
             <View style={styles.metaGrid}>
               <View style={styles.metaGridItem}>
                 <Text style={[styles.metaGridLabel, { color: colors.textSecondary }]}>ĐỘI THI</Text>
-                <Text style={[styles.metaGridValue, { color: colors.textPrimary }]}>Team Phoenix</Text>
+                <Text style={[styles.metaGridValue, { color: colors.textPrimary }]}>{teamName}</Text>
               </View>
               <View style={styles.metaGridItem}>
-                <Text style={[styles.metaGridLabel, { color: colors.textSecondary }]}>BẢNG ĐẤU (TRACK)</Text>
-                <Text style={[styles.metaGridValue, { color: colors.textPrimary }]}>AI for Education</Text>
+                <Text style={[styles.metaGridLabel, { color: colors.textSecondary }]}>PASS ID</Text>
+                <Text style={[styles.metaGridValue, { color: colors.textPrimary }]}>{passId}</Text>
               </View>
             </View>
 

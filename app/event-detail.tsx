@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,30 +6,59 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  Dimensions,
-  Alert,
-  Linking
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, ChevronRight, Info, HelpCircle, FileText, Phone, Award, Users, Calendar, MapPin } from "lucide-react-native";
+import {
+  ChevronLeft,
+  ChevronRight,
+  HelpCircle,
+  FileText,
+  Phone,
+  Award,
+  Calendar,
+  MapPin,
+} from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
+import { getPublicEventById } from "@/services/api/events";
+import { useTeamStatus } from "@/hooks/useTeamStatus";
+import type { PublicEvent } from "@/types/api";
+import {
+  formatDateRange,
+  formatEventSeason,
+  mapRoundStatusLabel,
+} from "@/utils/format";
 import { COMPETITIONS } from "@/constants/mockData";
-
-const { width } = Dimensions.get("window");
 
 export default function EventDetailScreen() {
   const { isDark } = useTheme();
   const { id } = useLocalSearchParams();
+  const eventId = id ? parseInt(id as string, 10) : null;
 
-  // Find event details, fallback to the main active event
-  const eventId = id ? parseInt(id as string) : 1;
-  const event = COMPETITIONS.find(c => c.id === eventId) || COMPETITIONS[0];
+  const [event, setEvent] = useState<PublicEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { data: teamStatus } = useTeamStatus(eventId);
+
+  const mockFallback = COMPETITIONS.find((c) => c.id === eventId) ?? COMPETITIONS[0];
+
+  useEffect(() => {
+    if (!eventId) return;
+    setLoading(true);
+    getPublicEventById(eventId)
+      .then(setEvent)
+      .catch(() => setEvent(null))
+      .finally(() => setLoading(false));
+  }, [eventId]);
+
+  const team = teamStatus?.teamInfo?.team;
+  const teamName = team?.name ?? mockFallback.myTeam ?? "Chưa có đội";
+  const trackName = team?.track?.name ?? mockFallback.track ?? "Chưa chọn";
+  const hasTeam = !!team;
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
     cardBg: isDark ? "#1A1918" : "#FFFFFF",
-    cardElevated: isDark ? "#211F1D" : "#F5F3EF",
     textPrimary: isDark ? "#F8F7F5" : "#1C1917",
     textSecondary: isDark ? "#A8A29E" : "#78716C",
     accent: "#F37021",
@@ -37,19 +66,20 @@ export default function EventDetailScreen() {
     success: "#10B981",
   };
 
-  const handleOpenHandbook = () => {
-    if (event.handbookUrl) {
-      Alert.alert("Tải tài liệu", `Đang mở tài liệu cuộc thi: ${event.handbookUrl}`);
-    } else {
-      Alert.alert("Thông báo", "Tài liệu cuộc thi chưa được cập nhật.");
-    }
-  };
+  const displayName = event?.name ?? mockFallback.name;
+  const displaySeason = event
+    ? formatEventSeason(event.season, event.year)
+    : mockFallback.season;
+  const displayTheme = event?.description ?? mockFallback.theme;
+  const displayDate = event
+    ? formatDateRange(event.startDate, event.registrationDeadline)
+    : mockFallback.date;
+  const rounds = event?.rounds ?? [];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top", "bottom"]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* ================= HEADER ================= */}
       <View style={[styles.appHeader, { borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ChevronLeft size={24} color={colors.textPrimary} />
@@ -58,168 +88,131 @@ export default function EventDetailScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* ================= EVENT HERO BANNER ================= */}
-        <View style={[styles.heroCard, { backgroundColor: "#2C1D11" }]}>
-          <Text style={[styles.heroSeason, { color: colors.accent }]}>{event.season}</Text>
-          <Text style={styles.heroTitle}>{event.name}</Text>
-          <Text style={styles.heroTheme}>{event.theme}</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          <View style={[styles.heroCard, { backgroundColor: "#2C1D11" }]}>
+            <Text style={[styles.heroSeason, { color: colors.accent }]}>{displaySeason}</Text>
+            <Text style={styles.heroTitle}>{displayName}</Text>
+            <Text style={styles.heroTheme}>{displayTheme}</Text>
 
-          <View style={styles.heroInfoGrid}>
-            <View style={styles.heroInfoItem}>
-              <Calendar size={12} color="#FFFFFF" opacity={0.7} />
-              <Text style={styles.heroInfoText}>{event.date}</Text>
-            </View>
-            <View style={styles.heroInfoItem}>
-              <MapPin size={12} color="#FFFFFF" opacity={0.7} />
-              <Text style={styles.heroInfoText} numberOfLines={1}>{event.location}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ================= MY REGISTRATION STATUS ================= */}
-        <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>THÔNG TIN THAM GIA</Text>
-          <View style={styles.regInfoRow}>
-            <Text style={[styles.regLabel, { color: colors.textSecondary }]}>Trạng thái:</Text>
-            <View style={[styles.statusBadge, { backgroundColor: "rgba(16, 185, 129, 0.15)" }]}>
-              <Text style={[styles.statusBadgeText, { color: colors.success }]}>ĐÃ ĐĂNG KÝ</Text>
-            </View>
-          </View>
-          <View style={styles.regInfoRow}>
-            <Text style={[styles.regLabel, { color: colors.textSecondary }]}>Đội thi:</Text>
-            <Text style={[styles.regValue, { color: colors.textPrimary }]}>{event.myTeam || "Chưa có đội"}</Text>
-          </View>
-          <View style={styles.regInfoRow}>
-            <Text style={[styles.regLabel, { color: colors.textSecondary }]}>Bảng đấu (Track):</Text>
-            <Text style={[styles.regValue, { color: colors.textPrimary }]}>{event.track || "Chưa chọn"}</Text>
-          </View>
-        </View>
-
-        {/* ================= LIST OF ROUNDS ================= */}
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>CÁC VÒNG THI</Text>
-        <View style={[styles.roundsCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          {[
-            { name: "Sơ loại hồ sơ", status: "Completed", date: "15/06 - 20/06" },
-            { name: "Round 1: Prototype Development", status: "Current", date: "22/06 - 29/06" },
-            { name: "Round 2: Demo Day & Final Pitching", status: "Locked", date: "05/07 - 12/07" },
-          ].map((round, idx) => (
-            <View key={idx} style={[styles.roundRow, idx !== 2 && { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-              <View style={styles.roundInfoCol}>
-                <Text style={[
-                  styles.roundNameText, 
-                  { color: colors.textPrimary },
-                  round.status === "Current" && { color: colors.accent, fontWeight: "700" },
-                  round.status === "Locked" && { color: colors.textSecondary }
-                ]}>
-                  {round.name}
-                </Text>
-                <Text style={[styles.roundDateText, { color: colors.textSecondary }]}>Thời gian: {round.date}</Text>
+            <View style={styles.heroInfoGrid}>
+              <View style={styles.heroInfoItem}>
+                <Calendar size={12} color="#FFFFFF" opacity={0.7} />
+                <Text style={styles.heroInfoText}>{displayDate}</Text>
               </View>
-
-              <View style={[
-                styles.roundStatusBadge,
-                round.status === "Completed" && { backgroundColor: `${colors.success}15` },
-                round.status === "Current" && { backgroundColor: "rgba(243, 112, 33, 0.15)" },
-                round.status === "Locked" && { backgroundColor: colors.cardElevated }
-              ]}>
-                <Text style={[
-                  styles.roundStatusText,
-                  round.status === "Completed" && { color: colors.success },
-                  round.status === "Current" && { color: colors.accent },
-                  round.status === "Locked" && { color: colors.textSecondary }
-                ]}>
-                  {round.status === "Completed" && "ĐÃ XONG"}
-                  {round.status === "Current" && "HIỆN TẠI"}
-                  {round.status === "Locked" && "ĐANG KHÓA"}
+              <View style={styles.heroInfoItem}>
+                <MapPin size={12} color="#FFFFFF" opacity={0.7} />
+                <Text style={styles.heroInfoText} numberOfLines={1}>
+                  {mockFallback.location}
                 </Text>
               </View>
             </View>
-          ))}
-        </View>
+          </View>
 
-        {/* ================= COMPETITION RULES ================= */}
-        {event.rules && event.rules.length > 0 && (
-          <>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>QUY CHẾ CUỘC THI</Text>
-            <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-              {event.rules.map((rule, idx) => (
-                <View key={idx} style={styles.bulletRow}>
-                  <Info size={14} color={colors.accent} style={{ marginRight: 10, marginTop: 2 }} />
-                  <Text style={[styles.bulletText, { color: colors.textPrimary }]}>{rule}</Text>
-                </View>
-              ))}
+          <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>THÔNG TIN THAM GIA</Text>
+            <View style={styles.regInfoRow}>
+              <Text style={[styles.regLabel, { color: colors.textSecondary }]}>Trạng thái:</Text>
+              <View style={[styles.statusBadge, { backgroundColor: hasTeam ? "rgba(16, 185, 129, 0.15)" : "rgba(243, 112, 33, 0.1)" }]}>
+                <Text style={[styles.statusBadgeText, { color: hasTeam ? colors.success : colors.accent }]}>
+                  {hasTeam ? "ĐÃ ĐĂNG KÝ" : "CHƯA CÓ ĐỘI"}
+                </Text>
+              </View>
             </View>
-          </>
-        )}
+            <View style={styles.regInfoRow}>
+              <Text style={[styles.regLabel, { color: colors.textSecondary }]}>Đội thi:</Text>
+              <Text style={[styles.regValue, { color: colors.textPrimary }]}>{teamName}</Text>
+            </View>
+            <View style={styles.regInfoRow}>
+              <Text style={[styles.regLabel, { color: colors.textSecondary }]}>Bảng đấu (Track):</Text>
+              <Text style={[styles.regValue, { color: colors.textPrimary }]}>{trackName}</Text>
+            </View>
+          </View>
 
-        {/* ================= JUDGING CRITERIA ================= */}
-        {event.criteria && event.criteria.length > 0 && (
-          <>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>TIÊU CHÍ CHẤM ĐIỂM</Text>
-            <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-              {event.criteria.map((item, idx) => (
-                <View key={idx} style={styles.criteriaItem}>
-                  <View style={styles.criteriaHeader}>
-                    <Text style={[styles.criteriaName, { color: colors.textPrimary }]}>{item.criterion}</Text>
-                    <Text style={[styles.criteriaWeight, { color: colors.accent }]}>Trọng số: {item.weight}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>CÁC VÒNG THI</Text>
+          <View style={[styles.roundsCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            {rounds.length === 0 ? (
+              <Text style={[styles.regValue, { color: colors.textSecondary, padding: 16 }]}>
+                Chưa có vòng thi nào.
+              </Text>
+            ) : (
+              rounds.map((round, idx) => (
+                <View
+                  key={round.id}
+                  style={[
+                    styles.roundRow,
+                    idx !== rounds.length - 1 && {
+                      borderBottomColor: colors.border,
+                      borderBottomWidth: 1,
+                    },
+                  ]}
+                >
+                  <View style={styles.roundInfoCol}>
+                    <Text style={[styles.roundNameText, { color: colors.textPrimary }]}>
+                      {round.name}
+                    </Text>
+                    <Text style={[styles.roundDateText, { color: colors.textSecondary }]}>
+                      {mapRoundStatusLabel(round.status)}
+                      {round.submissionDeadline
+                        ? ` · Hạn: ${new Date(round.submissionDeadline).toLocaleDateString("vi-VN")}`
+                        : ""}
+                    </Text>
                   </View>
-                  <Text style={[styles.criteriaDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
+                  <ChevronRight size={16} color={colors.textSecondary} />
                 </View>
-              ))}
-            </View>
-          </>
-        )}
-
-        {/* ================= PARTICIPANT HANDBOOK ================= */}
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>TÀI LIỆU HƯỚNG DẪN</Text>
-        <TouchableOpacity 
-          style={[styles.handbookCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
-          activeOpacity={0.85}
-          onPress={handleOpenHandbook}
-        >
-          <View style={styles.handbookLeft}>
-            <FileText size={24} color={colors.accent} style={{ marginRight: 12 }} />
-            <View>
-              <Text style={[styles.handbookTitle, { color: colors.textPrimary }]}>SEAL Participant Handbook</Text>
-              <Text style={[styles.handbookDesc, { color: colors.textSecondary }]}>Cẩm nang hướng dẫn thí sinh thi SEAL Hackathon</Text>
-            </View>
+              ))
+            )}
           </View>
-          <ChevronRight size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
 
-        {/* ================= FAQ ================= */}
-        {event.faq && event.faq.length > 0 && (
-          <>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>CÂU HỎI THƯỜNG GẶP (FAQ)</Text>
-            <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-              {event.faq.map((faq, idx) => (
-                <View key={idx} style={styles.faqItem}>
-                  <Text style={[styles.faqQuestion, { color: colors.textPrimary }]}>Q: {faq.q}</Text>
-                  <Text style={[styles.faqAnswer, { color: colors.textSecondary }]}>A: {faq.a}</Text>
-                </View>
-              ))}
-            </View>
-          </>
-        )}
+          {mockFallback.faq.length > 0 && (
+            <>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>FAQ</Text>
+              <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                {mockFallback.faq.map((item, idx) => (
+                  <View key={idx} style={{ padding: 16, borderBottomWidth: idx < mockFallback.faq.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                    <View style={{ flexDirection: "row", gap: 8 }}>
+                      <HelpCircle size={14} color={colors.accent} />
+                      <Text style={[styles.regValue, { color: colors.textPrimary, flex: 1 }]}>{item.q}</Text>
+                    </View>
+                    <Text style={[styles.regLabel, { color: colors.textSecondary, marginTop: 8, marginLeft: 22 }]}>
+                      {item.a}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
 
-        {/* ================= CONTACT ORGANIZER ================= */}
-        <View style={[styles.contactCard, { backgroundColor: colors.cardElevated, borderColor: colors.border }]}>
-          <Phone size={18} color={colors.accent} style={{ marginRight: 10 }} />
-          <Text style={[styles.contactText, { color: colors.textPrimary }]}>
-            Ban tổ chức SEAL Hackathon: <Text style={{ color: colors.accent, fontWeight: "700" }}>{event.contact}</Text>
-          </Text>
-        </View>
-
-      </ScrollView>
+          <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border, marginTop: 8 }]}>
+            <TouchableOpacity style={styles.linkRow}>
+              <FileText size={16} color={colors.accent} />
+              <Text style={[styles.regValue, { color: colors.textPrimary, marginLeft: 10 }]}>
+                Tài liệu cuộc thi
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.linkRow, { marginTop: 12 }]}>
+              <Phone size={16} color={colors.accent} />
+              <Text style={[styles.regValue, { color: colors.textPrimary, marginLeft: 10 }]}>
+                {mockFallback.contact || "seal.hcm@fpt.edu.vn"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.linkRow, { marginTop: 12 }]}>
+              <Award size={16} color={colors.accent} />
+              <Text style={[styles.regValue, { color: colors.textPrimary, marginLeft: 10 }]}>
+                Tiêu chí chấm điểm (xem trên Web)
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   appHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -228,212 +221,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  backBtn: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
-  },
-  heroCard: {
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 20,
-  },
-  heroSeason: {
-    fontSize: 11,
-    fontWeight: "850",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  heroTitle: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "900",
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  heroTheme: {
-    color: "#E7E5E4",
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  heroInfoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  heroInfoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  heroInfoText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 20,
-  },
-  cardTitle: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-    marginBottom: 12,
-  },
+  backBtn: { width: 32, height: 32, justifyContent: "center", alignItems: "center" },
+  headerTitle: { fontSize: 16, fontWeight: "800", textTransform: "uppercase" },
+  scrollContent: { padding: 16, paddingBottom: 40, gap: 12 },
+  heroCard: { borderRadius: 20, padding: 20 },
+  heroSeason: { fontSize: 11, fontWeight: "800", letterSpacing: 1 },
+  heroTitle: { color: "#FFFFFF", fontSize: 22, fontWeight: "800", marginTop: 6 },
+  heroTheme: { color: "rgba(255,255,255,0.75)", fontSize: 13, marginTop: 8, lineHeight: 20 },
+  heroInfoGrid: { marginTop: 16, gap: 8 },
+  heroInfoItem: { flexDirection: "row", alignItems: "center", gap: 6 },
+  heroInfoText: { color: "#FFFFFF", fontSize: 11, opacity: 0.85 },
+  card: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
+  cardTitle: { fontSize: 11, fontWeight: "800", padding: 16, paddingBottom: 8, letterSpacing: 0.5 },
   regInfoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
-  regLabel: {
-    fontSize: 13,
-  },
-  regValue: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: "800",
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  roundsCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    overflow: "hidden",
-    marginBottom: 20,
-  },
-  roundRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 14,
-  },
-  roundInfoCol: {
-    flex: 1,
-  },
-  roundNameText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  roundDateText: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  roundStatusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  roundStatusText: {
-    fontSize: 9,
-    fontWeight: "800",
-  },
-  bulletRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 10,
-  },
-  bulletText: {
-    fontSize: 13,
-    lineHeight: 18,
-    flex: 1,
-  },
-  criteriaItem: {
-    marginBottom: 14,
-  },
-  criteriaHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  criteriaName: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  criteriaWeight: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  criteriaDesc: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  handbookCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  handbookLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  handbookTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  handbookDesc: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  faqItem: {
-    marginBottom: 14,
-  },
-  faqQuestion: {
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  faqAnswer: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  contactCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  contactText: {
-    fontSize: 12,
-    fontWeight: "600",
-    flex: 1,
-  },
+  regLabel: { fontSize: 13 },
+  regValue: { fontSize: 13, fontWeight: "600" },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  statusBadgeText: { fontSize: 10, fontWeight: "800" },
+  sectionTitle: { fontSize: 13, fontWeight: "800", marginTop: 8, marginBottom: 4, marginLeft: 4 },
+  roundsCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
+  roundRow: { flexDirection: "row", alignItems: "center", padding: 16 },
+  roundInfoCol: { flex: 1 },
+  roundNameText: { fontSize: 14, fontWeight: "600" },
+  roundDateText: { fontSize: 11, marginTop: 4 },
+  linkRow: { flexDirection: "row", alignItems: "center", padding: 16, paddingBottom: 0 },
 });

@@ -2,9 +2,14 @@ import {
     View,
     TextInput,
     StyleSheet,
+    TextInputProps,
 } from "react-native";
 
 import { useTheme } from "@/constants/theme/ThemeProvider";
+
+type InputProps = TextInputProps & {
+    leftIcon?: React.ReactNode;
+};
 
 export default function Input({
     value,
@@ -12,7 +17,8 @@ export default function Input({
     placeholder,
     secureTextEntry,
     leftIcon,
-}: any) {
+    ...rest
+}: InputProps) {
     const { theme } = useTheme();
 
     return (
@@ -41,6 +47,7 @@ export default function Input({
                         color: theme.text,
                     },
                 ]}
+                {...rest}
             />
         </View>
     );

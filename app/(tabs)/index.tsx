@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -29,21 +29,60 @@ import {
   Lock
 } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEventContext, useSelectedEvent } from "@/contexts/EventContext";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useTeamStatus } from "@/hooks/useTeamStatus";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
-  CURRENT_USER,
-  CURRENT_ROUND,
   TIMELINE_ACTIVITIES,
   ANNOUNCEMENTS,
   MOCK_MENTOR,
-  GENERAL_STATS
 } from "@/constants/mockData";
+import {
+  computeDeadlineProgress,
+  computeTimeLeft,
+  formatDateTime,
+  getInitials,
+  mapRoundStatusLabel,
+  mapTeamRoleLabel,
+} from "@/utils/format";
 
 const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const { isDark } = useTheme();
-  
-  // Custom design colors
+  const { user } = useAuth();
+  const { myEvents, selectedEventId, setSelectedEventId } = useEventContext();
+  const selectedEvent = useSelectedEvent();
+  const { data: workspace } = useWorkspace(selectedEventId);
+  const { data: teamStatus } = useTeamStatus(selectedEventId);
+  const { unreadCount } = useNotifications();
+
+  const activeEntry = workspace?.roundSubmissions?.find(
+    (r) => r.round.id === workspace.currentActiveRound?.id,
+  ) ?? workspace?.roundSubmissions?.find((r) => r.canSubmit) ?? workspace?.roundSubmissions?.[0];
+
+  const currentRound = activeEntry?.round;
+  const currentSubmission = activeEntry?.submission;
+  const team = workspace?.team ?? teamStatus?.teamInfo?.team;
+  const mentor = team?.mentorAssignments?.[0]?.mentor;
+  const memberCount = team?.members?.filter((m) => m.status === "accepted").length ?? 0;
+
+  const displayName = user?.name ?? "Bạn";
+  const roleLabel = workspace?.role ? mapTeamRoleLabel(workspace.role) : "Sinh viên";
+  const eventName = selectedEvent?.event.name ?? myEvents[0]?.event.name ?? "SEAL";
+  const teamName = team?.name ?? selectedEvent?.teamName ?? "—";
+  const trackName = team?.track?.name ?? "—";
+  const teamInitials = getInitials(teamName);
+
+  const roundLabel = currentRound ? `VÒNG ${currentRound.roundNumber}` : "VÒNG THI";
+  const roundName = currentRound?.name ?? "Chưa có vòng thi";
+  const roundStatus = currentRound ? mapRoundStatusLabel(currentRound.status) : "—";
+  const timeLeft = computeTimeLeft(currentRound?.submissionDeadline);
+  const roundProgress = computeDeadlineProgress(null, currentRound?.submissionDeadline);
+  const hasSubmitted = !!currentSubmission;
+
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
     cardBg: isDark ? "#1A1918" : "#FFFFFF",
@@ -58,11 +97,7 @@ export default function HomeScreen() {
     border: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
   };
 
-  // State to simulate event switching
-  const [currentEvent, setCurrentEvent] = useState("SEAL Summer 2026");
-
-  // Get next activity
-  const nextActivity = TIMELINE_ACTIVITIES.find(a => a.status === "upcoming") || TIMELINE_ACTIVITIES[0];
+  const nextActivity = TIMELINE_ACTIVITIES.find((a) => a.status === "upcoming") || TIMELINE_ACTIVITIES[0];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
@@ -82,7 +117,7 @@ export default function HomeScreen() {
             activeOpacity={0.7}
             onPress={() => router.push("/event-detail")}
           >
-            <Text style={[styles.eventName, { color: colors.textPrimary }]}>{currentEvent}</Text>
+            <Text style={[styles.eventName, { color: colors.textPrimary }]}>{eventName}</Text>
             <ChevronDown size={14} color={colors.textSecondary} style={{ marginLeft: 4 }} />
           </TouchableOpacity>
         </View>
@@ -93,7 +128,7 @@ export default function HomeScreen() {
           onPress={() => router.push("/notifications")}
         >
           <Bell size={18} color={colors.textPrimary} />
-          <View style={[styles.badge, { backgroundColor: colors.accent }]} />
+          {unreadCount > 0 && <View style={[styles.badge, { backgroundColor: colors.accent }]} />}
         </TouchableOpacity>
       </View>
 
@@ -104,43 +139,43 @@ export default function HomeScreen() {
         {/* ================= GREETING HEADER ================= */}
         <View style={styles.greetingHeader}>
           <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>Xin chào,</Text>
-          <Text style={[styles.userName, { color: colors.textPrimary }]}>{CURRENT_USER.name} 👋</Text>
+          <Text style={[styles.userName, { color: colors.textPrimary }]}>{displayName} 👋</Text>
           <View style={styles.roleRow}>
-            <Text style={[styles.teamName, { color: colors.accent }]}>Team Phoenix</Text>
+            <Text style={[styles.teamName, { color: colors.accent }]}>{teamName}</Text>
             <Text style={[styles.roleDivider, { color: colors.border }]}>|</Text>
-            <Text style={[styles.roleLabel, { color: colors.textSecondary }]}>{CURRENT_USER.role}</Text>
+            <Text style={[styles.roleLabel, { color: colors.textSecondary }]}>{roleLabel}</Text>
           </View>
         </View>
 
         {/* ================= CURRENT ROUND CARD ================= */}
         <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
           <View style={styles.roundHeader}>
-            <Text style={[styles.cardTag, { color: colors.accent }]}>{CURRENT_ROUND.label}</Text>
+            <Text style={[styles.cardTag, { color: colors.accent }]}>{roundLabel}</Text>
             <View style={[styles.statusBadge, { backgroundColor: "rgba(243, 112, 33, 0.1)" }]}>
-              <Text style={[styles.statusBadgeText, { color: colors.accent }]}>{CURRENT_ROUND.status}</Text>
+              <Text style={[styles.statusBadgeText, { color: colors.accent }]}>{roundStatus}</Text>
             </View>
           </View>
 
-          <Text style={[styles.roundName, { color: colors.textPrimary }]}>{CURRENT_ROUND.name}</Text>
+          <Text style={[styles.roundName, { color: colors.textPrimary }]}>{roundName}</Text>
           
           <View style={styles.timeRow}>
             <Clock size={14} color={colors.warning} />
-            <Text style={[styles.timeLeft, { color: colors.warning }]}>{CURRENT_ROUND.timeLeft}</Text>
+            <Text style={[styles.timeLeft, { color: colors.warning }]}>{timeLeft}</Text>
           </View>
 
-          {/* Progress bar */}
           <View style={styles.progressContainer}>
             <View style={[styles.progressBar, { backgroundColor: isDark ? "#2A2826" : "#E5E7EB" }]}>
-              <View style={[styles.progressFill, { width: `${CURRENT_ROUND.progress * 100}%`, backgroundColor: colors.accent }]} />
+              <View style={[styles.progressFill, { width: `${roundProgress * 100}%`, backgroundColor: colors.accent }]} />
             </View>
             <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-              Hạn nộp: 23:59 · 29/06
+              {currentRound?.submissionDeadline
+                ? `Hạn nộp: ${formatDateTime(currentRound.submissionDeadline)}`
+                : "Chưa có deadline"}
             </Text>
           </View>
 
-          {/* Submission status */}
           <View style={[styles.submissionStatusBox, { backgroundColor: colors.cardElevated }]}>
-            {CURRENT_ROUND.submissionStatus === "Đã nộp bài" ? (
+            {hasSubmitted ? (
               <>
                 <View style={styles.subStatusTextRow}>
                   <CheckCircle size={16} color={colors.success} style={{ marginRight: 6 }} />
@@ -149,7 +184,7 @@ export default function HomeScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.submissionTime, { color: colors.textSecondary }]}>
-                  Nộp lúc: {CURRENT_ROUND.submissionTime}
+                  Nộp lúc: {formatDateTime(currentSubmission?.submittedAt)}
                 </Text>
               </>
             ) : (
@@ -211,7 +246,7 @@ export default function HomeScreen() {
 
           {nextActivity.type === "Mentoring" && (
             <Text style={[styles.activityMentorInfo, { color: colors.textSecondary }]}>
-              Người hướng dẫn: <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>{nextActivity.mentorName || MOCK_MENTOR.name}</Text>
+              Người hướng dẫn: <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>{nextActivity.mentorName || mentor?.name || MOCK_MENTOR.name}</Text>
             </Text>
           )}
 
@@ -283,18 +318,18 @@ export default function HomeScreen() {
         <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
           <View style={styles.teamHeaderRow}>
             <View style={[styles.teamAvatar, { backgroundColor: colors.accent }]}>
-              <Text style={styles.teamAvatarText}>TP</Text>
+              <Text style={[styles.teamAvatarText, { color: "#FFFFFF" }]}>{teamInitials}</Text>
             </View>
             <View style={styles.teamDetailCol}>
-              <Text style={[styles.teamNameText, { color: colors.textPrimary }]}>Team Phoenix</Text>
-              <Text style={[styles.teamTrackText, { color: colors.textSecondary }]}>Track: AI for Education</Text>
+              <Text style={[styles.teamNameText, { color: colors.textPrimary }]}>{teamName}</Text>
+              <Text style={[styles.teamTrackText, { color: colors.textSecondary }]}>Track: {trackName}</Text>
             </View>
           </View>
 
           <View style={styles.teamStatsGrid}>
             <View style={styles.teamStatItem}>
               <Text style={[styles.teamStatLabel, { color: colors.textSecondary }]}>Thành viên</Text>
-              <Text style={[styles.teamStatValue, { color: colors.textPrimary }]}>4 / 5</Text>
+              <Text style={[styles.teamStatValue, { color: colors.textPrimary }]}>{memberCount || "—"}</Text>
             </View>
             <View style={styles.teamStatItem}>
               <Text style={[styles.teamStatLabel, { color: colors.textSecondary }]}>Trạng thái</Text>
@@ -304,7 +339,9 @@ export default function HomeScreen() {
 
           <View style={styles.mentorBriefRow}>
             <Text style={[styles.mentorBriefLabel, { color: colors.textSecondary }]}>Mentor:</Text>
-            <Text style={[styles.mentorBriefValue, { color: colors.textPrimary }]}>{MOCK_MENTOR.name}</Text>
+            <Text style={[styles.mentorBriefValue, { color: colors.textPrimary }]}>
+              {mentor?.name ?? MOCK_MENTOR.name}
+            </Text>
           </View>
 
           <TouchableOpacity 
@@ -366,7 +403,9 @@ export default function HomeScreen() {
             <QrCode size={24} color={colors.accent} style={{ marginRight: 12 }} />
             <View>
               <Text style={[styles.passTitle, { color: colors.textPrimary }]}>THẺ THAM GIA CUỘC THI</Text>
-              <Text style={[styles.passSubtitle, { color: colors.textSecondary }]}>Mã số: {CURRENT_USER.studentId} · Team Phoenix</Text>
+              <Text style={[styles.passSubtitle, { color: colors.textSecondary }]}>
+                MSSV: {user?.studentProfile?.studentCode ?? "—"} · {teamName}
+              </Text>
             </View>
           </View>
           <View style={[styles.passButton, { backgroundColor: colors.accent }]}>

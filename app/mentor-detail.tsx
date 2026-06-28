@@ -101,10 +101,10 @@ export default function MentorDetailScreen() {
 
         <TouchableOpacity
           style={[styles.messageBtn, { borderColor: colors.border }]}
-          onPress={() => Alert.alert("Thông báo", "Chat mentor sắp ra mắt.")}
+          onPress={() => router.push("/team-chat")}
         >
           <MessageSquare size={16} color={colors.textPrimary} />
-          <Text style={[styles.messageBtnText, { color: colors.textPrimary }]}>Nhắn tin Mentor</Text>
+          <Text style={[styles.messageBtnText, { color: colors.textPrimary }]}>Nhắn tin</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

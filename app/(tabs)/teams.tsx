@@ -229,10 +229,10 @@ export default function TeamsScreen() {
               <TouchableOpacity 
                 style={[styles.actionBtnOutline, { borderColor: colors.border }]}
                 activeOpacity={0.7}
-                onPress={() => Alert.alert("Thông báo", "Chức năng nhắn tin nhóm sẽ sớm ra mắt ở phiên bản tiếp theo.")}
+                onPress={() => router.push("/team-chat")}
               >
                 <MessageSquare size={16} color={colors.textPrimary} style={{ marginRight: 8 }} />
-                <Text style={[styles.actionBtnOutlineText, { color: colors.textPrimary }]}>Nhắn tin nhóm</Text>
+                <Text style={[styles.actionBtnOutlineText, { color: colors.textPrimary }]}>Nhắn tin</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 

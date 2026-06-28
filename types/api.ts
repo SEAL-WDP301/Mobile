@@ -182,3 +182,38 @@ export interface TeamInvitation {
   eventName: string;
   leaderName: string;
 }
+
+export interface ChatMessageSender {
+  id: number;
+  name: string;
+  avatarUrl?: string | null;
+  role: string;
+}
+
+export interface ChatMessageRead {
+  id: number;
+  userId: number;
+  readAt: string;
+  user?: {
+    id: number;
+    name: string;
+    avatarUrl?: string | null;
+  };
+}
+
+export interface TeamChatMessage {
+  id: number;
+  teamId: number;
+  senderId: number;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  isEdited: boolean;
+  isDeleted: boolean;
+  sender: ChatMessageSender;
+  reads?: ChatMessageRead[];
+}
+
+export interface MentorChatMessage extends TeamChatMessage {
+  mentorId: number;
+}

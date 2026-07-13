@@ -30,10 +30,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEventContext } from "@/contexts/EventContext";
 import { useTeamStatus } from "@/hooks/useTeamStatus";
 import { useWorkspace } from "@/hooks/useWorkspace";
+<<<<<<< HEAD
 import { usePendingInvitations } from "@/hooks/usePendingInvitations";
 import { usePublicEvents } from "@/hooks/usePublicEvents";
 import { getInitials, mapTeamRoleLabel } from "@/utils/format";
 import { WEB_APP_URL } from "@/constants/config";
+=======
+import { getInitials, mapTeamRoleLabel } from "@/utils/format";
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
 const { width } = Dimensions.get("window");
 
@@ -41,21 +45,29 @@ export default function TeamsScreen() {
   const { isDark } = useTheme();
   const { user } = useAuth();
   const { selectedEventId } = useEventContext();
+<<<<<<< HEAD
   const { data: teamStatus, loading, refresh: refreshTeamStatus } = useTeamStatus(selectedEventId);
   const { data: workspace, refresh: refreshWorkspace } = useWorkspace(selectedEventId);
   const { items: invitations, loading: loadingInvites, accept, reject } = usePendingInvitations();
   const { events: publicEvents } = usePublicEvents();
+=======
+  const { data: teamStatus, loading } = useTeamStatus(selectedEventId);
+  const { data: workspace } = useWorkspace(selectedEventId);
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   const team = teamStatus?.teamInfo?.team;
   const hasTeam = !!team;
   const members = team?.members?.filter((m) => m.status === "accepted") ?? [];
+<<<<<<< HEAD
   const maxMembersPerTeam = team?.track?.maxMembersPerTeam;
   const selectedPublicEvent = publicEvents.find((e) => e.id === selectedEventId);
   const eventMaxTeamSize = selectedPublicEvent?.tracks?.reduce(
     (max, track) => Math.max(max, track.maxMembersPerTeam ?? 0),
     0,
   );
+=======
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   const mentor = team?.mentorAssignments?.[0]?.mentor;
   const mentorProfile = mentor?.stakeholderProfile;
   const teamName = team?.name ?? "—";
@@ -65,12 +77,16 @@ export default function TeamsScreen() {
   const hasSubmission = !!workspace?.latestSubmission;
 
   const checklistItems = [
+<<<<<<< HEAD
     {
       label: maxMembersPerTeam
         ? `Số thành viên (tối đa ${maxMembersPerTeam})`
         : "Số thành viên trong đội",
       status: maxMembersPerTeam ? members.length > 0 && members.length <= maxMembersPerTeam : members.length > 0,
     },
+=======
+    { label: "Đủ số lượng thành viên (tối thiểu 3)", status: members.length >= 3 },
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
     { label: "Tất cả thành viên đã xác nhận", status: members.every((m) => m.status === "accepted") },
     { label: `Đã chọn track thi đấu (${trackName})`, status: !!team?.track },
     { label: "Hồ sơ đội thi hợp lệ", status: isApproved },
@@ -363,7 +379,11 @@ export default function TeamsScreen() {
                 style={[styles.modalBtnConfirm, { backgroundColor: colors.error }]}
                 onPress={() => {
                   setShowLeaveModal(false);
+<<<<<<< HEAD
                   Alert.alert("Thông báo", "Tính năng rời đội chưa khả dụng trên mobile.");
+=======
+                  Alert.alert("Thông báo", "Rời đội hiện thực hiện trên SEAL Web. API mobile chưa hỗ trợ.");
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
                 }}
               >
                 <Text style={styles.modalBtnConfirmText}>Đồng ý rời</Text>

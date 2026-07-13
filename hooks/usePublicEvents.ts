@@ -21,7 +21,11 @@ export function usePublicEvents() {
   }, []);
 
   useEffect(() => {
+<<<<<<< HEAD
     void refresh().catch(() => undefined);
+=======
+    refresh();
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   }, [refresh]);
 
   return { events, loading, error, refresh };

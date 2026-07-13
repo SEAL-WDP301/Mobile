@@ -15,6 +15,10 @@ import { useTheme } from "@/constants/theme/useTheme";
 import { useEventContext } from "@/contexts/EventContext";
 import { useTeamStatus } from "@/hooks/useTeamStatus";
 import { getInitials } from "@/utils/format";
+<<<<<<< HEAD
+=======
+import { MOCK_MENTOR } from "@/constants/mockData";
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
 export default function MentorDetailScreen() {
   const { isDark } = useTheme();
@@ -24,10 +28,17 @@ export default function MentorDetailScreen() {
   const mentor = teamStatus?.teamInfo?.team?.mentorAssignments?.[0]?.mentor;
   const profile = mentor?.stakeholderProfile;
 
+<<<<<<< HEAD
   const displayName = mentor?.name ?? "—";
   const position = profile?.jobTitle ?? "—";
   const org = profile?.organization ?? "—";
   const bio = profile?.bio ?? "Chưa có giới thiệu.";
+=======
+  const displayName = mentor?.name ?? MOCK_MENTOR.name;
+  const position = profile?.jobTitle ?? MOCK_MENTOR.position;
+  const org = profile?.organization ?? MOCK_MENTOR.org;
+  const bio = profile?.bio ?? MOCK_MENTOR.bio;
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -143,6 +154,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 32, height: 32, justifyContent: "center", alignItems: "center" },
   headerTitle: { fontSize: 16, fontWeight: "800", textTransform: "uppercase" },
+<<<<<<< HEAD
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   emptyTitle: { fontSize: 18, fontWeight: "800", marginBottom: 8 },
   emptyText: { fontSize: 14, textAlign: "center", lineHeight: 20 },
@@ -161,23 +173,53 @@ const styles = StyleSheet.create({
   infoCard: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12, marginBottom: 16 },
   infoRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   infoText: { fontSize: 14, fontWeight: "500", flex: 1 },
+=======
+  scrollContent: { padding: 16, paddingBottom: 40, gap: 12 },
+  profileCard: { borderRadius: 16, borderWidth: 1, padding: 16 },
+  profileHeader: { flexDirection: "row", alignItems: "center" },
+  avatarLarge: { width: 64, height: 64, borderRadius: 16, justifyContent: "center", alignItems: "center" },
+  avatarText: { color: "#FFFFFF", fontSize: 20, fontWeight: "800" },
+  profileInfo: { marginLeft: 14, flex: 1 },
+  nameText: { fontSize: 18, fontWeight: "800" },
+  positionText: { fontSize: 13, marginTop: 4 },
+  orgText: { fontSize: 12, marginTop: 2 },
+  sectionTitle: { fontSize: 12, fontWeight: "800", marginLeft: 4, marginTop: 8 },
+  card: { borderRadius: 16, borderWidth: 1, padding: 16 },
+  bioText: { fontSize: 14, lineHeight: 22 },
+  infoCard: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  infoText: { fontSize: 13, flex: 1 },
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   bookBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+<<<<<<< HEAD
     height: 52,
     borderRadius: 26,
     marginBottom: 12,
   },
   bookBtnText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
+=======
+    padding: 16,
+    borderRadius: 14,
+    marginTop: 8,
+  },
+  bookBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   messageBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+<<<<<<< HEAD
     height: 48,
     borderRadius: 24,
+=======
+    padding: 14,
+    borderRadius: 14,
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
     borderWidth: 1,
   },
   messageBtnText: { fontSize: 14, fontWeight: "600" },

@@ -10,45 +10,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-} from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Info, HelpCircle, FileText, Phone, Award, Users, Calendar, MapPin } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
-import { SUPPORT_EMAIL, SUPPORT_PHONE } from "@/constants/config";
-import { getPublicEventById } from "@/services/api/events";
-import { useTeamStatus } from "@/hooks/useTeamStatus";
-import type { PublicEvent } from "@/types/api";
-import {
-  formatDateRange,
-  formatEventSeason,
-  mapRoundStatusLabel,
-} from "@/utils/format";
+import { COMPETITIONS } from "@/constants/mockData";
+
+const { width } = Dimensions.get("window");
 
 export default function EventDetailScreen() {
   const { isDark } = useTheme();
   const { id } = useLocalSearchParams();
-  const eventId = id ? parseInt(id as string, 10) : null;
 
-  const [event, setEvent] = useState<PublicEvent | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { data: teamStatus } = useTeamStatus(eventId);
-
-  useEffect(() => {
-    if (!eventId) return;
-    setLoading(true);
-    getPublicEventById(eventId)
-      .then(setEvent)
-      .catch(() => setEvent(null))
-      .finally(() => setLoading(false));
-  }, [eventId]);
-
-  const team = teamStatus?.teamInfo?.team;
-  const teamName = team?.name ?? "Chưa có đội";
-  const trackName = team?.track?.name ?? "Chưa chọn";
-  const hasTeam = !!team;
-  const canRegister = !hasTeam && (event?.status === "active" || event?.status === "ongoing");
+  // Find event details, fallback to the main active event
+  const eventId = id ? parseInt(id as string) : 1;
+  const event = COMPETITIONS.find(c => c.id === eventId) || COMPETITIONS[0];
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -60,15 +34,13 @@ export default function EventDetailScreen() {
     success: "#10B981",
   };
 
-  const displayName = event?.name ?? "Cuộc thi";
-  const displaySeason = event
-    ? formatEventSeason(event.season, event.year)
-    : "—";
-  const displayTheme = event?.description ?? "Chưa có mô tả";
-  const displayDate = event
-    ? formatDateRange(event.startDate, event.registrationDeadline)
-    : "—";
-  const rounds = event?.rounds ?? [];
+  const handleOpenHandbook = () => {
+    if (event.handbookUrl) {
+      Alert.alert("Tải tài liệu", `Đang mở tài liệu cuộc thi: ${event.handbookUrl}`);
+    } else {
+      Alert.alert("Thông báo", "Tài liệu cuộc thi chưa được cập nhật.");
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top", "bottom"]}>
@@ -82,26 +54,24 @@ export default function EventDetailScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      {loading ? (
-        <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
-      ) : !event ? (
-        <View style={styles.emptyState}>
-          <Text style={{ color: colors.textSecondary }}>Không tải được thông tin cuộc thi.</Text>
-        </View>
-      ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <View style={[styles.heroCard, { backgroundColor: "#2C1D11" }]}>
-            <Text style={[styles.heroSeason, { color: colors.accent }]}>{displaySeason}</Text>
-            <Text style={styles.heroTitle}>{displayName}</Text>
-            <Text style={styles.heroTheme}>{displayTheme}</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* ================= EVENT HERO BANNER ================= */}
+        <View style={[styles.heroCard, { backgroundColor: "#2C1D11" }]}>
+          <Text style={[styles.heroSeason, { color: colors.accent }]}>{event.season}</Text>
+          <Text style={styles.heroTitle}>{event.name}</Text>
+          <Text style={styles.heroTheme}>{event.theme}</Text>
 
-            <View style={styles.heroInfoGrid}>
-              <View style={styles.heroInfoItem}>
-                <Calendar size={12} color="#FFFFFF" opacity={0.7} />
-                <Text style={styles.heroInfoText}>{displayDate}</Text>
-              </View>
+          <View style={styles.heroInfoGrid}>
+            <View style={styles.heroInfoItem}>
+              <Calendar size={12} color="#FFFFFF" opacity={0.7} />
+              <Text style={styles.heroInfoText}>{event.date}</Text>
+            </View>
+            <View style={styles.heroInfoItem}>
+              <MapPin size={12} color="#FFFFFF" opacity={0.7} />
+              <Text style={styles.heroInfoText} numberOfLines={1}>{event.location}</Text>
             </View>
           </View>
+        </View>
 
           <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
             <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>THÔNG TIN THAM GIA</Text>
@@ -157,36 +127,33 @@ export default function EventDetailScreen() {
               ))
             )}
           </View>
+          <ChevronRight size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
 
-          {(SUPPORT_EMAIL || SUPPORT_PHONE) ? (
-            <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border, marginTop: 8 }]}>
-              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>LIÊN HỆ</Text>
-              {SUPPORT_EMAIL ? (
-                <View style={styles.regInfoRow}>
-                  <Text style={[styles.regLabel, { color: colors.textSecondary }]}>Email:</Text>
-                  <Text style={[styles.regValue, { color: colors.textPrimary }]}>{SUPPORT_EMAIL}</Text>
+        {/* ================= FAQ ================= */}
+        {event.faq && event.faq.length > 0 && (
+          <>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>CÂU HỎI THƯỜNG GẶP (FAQ)</Text>
+            <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+              {event.faq.map((faq, idx) => (
+                <View key={idx} style={styles.faqItem}>
+                  <Text style={[styles.faqQuestion, { color: colors.textPrimary }]}>Q: {faq.q}</Text>
+                  <Text style={[styles.faqAnswer, { color: colors.textSecondary }]}>A: {faq.a}</Text>
                 </View>
-              ) : null}
-              {SUPPORT_PHONE ? (
-                <View style={styles.regInfoRow}>
-                  <Text style={[styles.regLabel, { color: colors.textSecondary }]}>Hotline:</Text>
-                  <Text style={[styles.regValue, { color: colors.textPrimary }]}>{SUPPORT_PHONE}</Text>
-                </View>
-              ) : null}
+              ))}
             </View>
-          ) : null}
+          </>
+        )}
 
-          {canRegister && eventId ? (
-            <TouchableOpacity
-              style={[styles.registerBtn, { backgroundColor: colors.accent }]}
-              activeOpacity={0.85}
-              onPress={() => router.push(`/event-register?id=${eventId}`)}
-            >
-              <Text style={styles.registerBtnText}>Đăng ký tham gia</Text>
-            </TouchableOpacity>
-          ) : null}
-        </ScrollView>
-      )}
+        {/* ================= CONTACT ORGANIZER ================= */}
+        <View style={[styles.contactCard, { backgroundColor: colors.cardElevated, borderColor: colors.border }]}>
+          <Phone size={18} color={colors.accent} style={{ marginRight: 10 }} />
+          <Text style={[styles.contactText, { color: colors.textPrimary }]}>
+            Ban tổ chức SEAL Hackathon: <Text style={{ color: colors.accent, fontWeight: "700" }}>{event.contact}</Text>
+          </Text>
+        </View>
+
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -201,19 +168,74 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  backBtn: { width: 32, height: 32, justifyContent: "center", alignItems: "center" },
-  headerTitle: { fontSize: 16, fontWeight: "800", textTransform: "uppercase" },
-  emptyState: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  scrollContent: { padding: 16, paddingBottom: 40, gap: 12 },
-  heroCard: { borderRadius: 20, padding: 20 },
-  heroSeason: { fontSize: 11, fontWeight: "800", letterSpacing: 1 },
-  heroTitle: { color: "#FFFFFF", fontSize: 22, fontWeight: "800", marginTop: 6 },
-  heroTheme: { color: "rgba(255,255,255,0.75)", fontSize: 13, marginTop: 8, lineHeight: 20 },
-  heroInfoGrid: { marginTop: 16, gap: 8 },
-  heroInfoItem: { flexDirection: "row", alignItems: "center", gap: 6 },
-  heroInfoText: { color: "#FFFFFF", fontSize: 11, opacity: 0.85 },
-  card: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
-  cardTitle: { fontSize: 11, fontWeight: "800", padding: 16, paddingBottom: 8, letterSpacing: 0.5 },
+  backBtn: {
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  heroCard: {
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 20,
+  },
+  heroSeason: {
+    fontSize: 11,
+    fontWeight: "850",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "900",
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  heroTheme: {
+    color: "#E7E5E4",
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  heroInfoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  heroInfoItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  heroInfoText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  card: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 20,
+  },
+  cardTitle: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    marginBottom: 12,
+  },
   regInfoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -221,23 +243,138 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  regLabel: { fontSize: 13 },
-  regValue: { fontSize: 13, fontWeight: "600" },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  statusBadgeText: { fontSize: 10, fontWeight: "800" },
-  sectionTitle: { fontSize: 13, fontWeight: "800", marginTop: 8, marginBottom: 4, marginLeft: 4 },
-  roundsCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
-  roundRow: { flexDirection: "row", alignItems: "center", padding: 16 },
-  roundInfoCol: { flex: 1 },
-  roundNameText: { fontSize: 14, fontWeight: "600" },
-  roundDateText: { fontSize: 11, marginTop: 4 },
-  linkRow: { flexDirection: "row", alignItems: "center", padding: 16, paddingBottom: 0 },
-  registerBtn: {
-    height: 52,
-    borderRadius: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
+  regLabel: {
+    fontSize: 13,
   },
-  registerBtnText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
+  regValue: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  roundsCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: "hidden",
+    marginBottom: 20,
+  },
+  roundRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 14,
+  },
+  roundInfoCol: {
+    flex: 1,
+  },
+  roundNameText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  roundDateText: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  roundStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  roundStatusText: {
+    fontSize: 9,
+    fontWeight: "800",
+  },
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 10,
+  },
+  bulletText: {
+    fontSize: 13,
+    lineHeight: 18,
+    flex: 1,
+  },
+  criteriaItem: {
+    marginBottom: 14,
+  },
+  criteriaHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  criteriaName: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  criteriaWeight: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  criteriaDesc: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  handbookCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  handbookLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  handbookTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  handbookDesc: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  faqItem: {
+    marginBottom: 14,
+  },
+  faqQuestion: {
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  faqAnswer: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  contactCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  contactText: {
+    fontSize: 12,
+    fontWeight: "600",
+    flex: 1,
+  },
 });

@@ -32,15 +32,21 @@ import {
 import { useTheme } from "@/constants/theme/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocale } from "@/contexts/LocaleContext";
+<<<<<<< HEAD
 import { useSelectedEvent } from "@/contexts/EventContext";
+=======
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 import {
   computeProfileCompletion,
   getInitials,
 } from "@/utils/format";
+<<<<<<< HEAD
 import {
   formatParticipantPassId,
   formatSupportContact,
 } from "@/constants/config";
+=======
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
 const { width } = Dimensions.get("window");
 
@@ -48,7 +54,10 @@ export default function ProfileScreen() {
   const { isDark, toggle } = useTheme();
   const { user, logout } = useAuth();
   const { t, localeLabel } = useLocale();
+<<<<<<< HEAD
   const selectedEvent = useSelectedEvent();
+=======
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   const displayName = user?.name ?? "—";
   const displayEmail = user?.email ?? "—";
@@ -56,9 +65,12 @@ export default function ProfileScreen() {
   const university = user?.studentProfile?.universityName ?? "Chưa cập nhật";
   const avatarInitials = getInitials(displayName);
   const profileCompletion = user ? computeProfileCompletion(user) : 0;
+<<<<<<< HEAD
   const passBadge = selectedEvent
     ? formatParticipantPassId(selectedEvent.event.year, selectedEvent.teamId)
     : null;
+=======
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",

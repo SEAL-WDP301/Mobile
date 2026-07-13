@@ -1,11 +1,15 @@
 import type {
   MentorFeedback,
   MyEventEntry,
+<<<<<<< HEAD
   RegisterIndividualPayload,
   RegisterTeamPayload,
   RegisteredTeam,
   RegistrationStatus,
   StudentRegistration,
+=======
+  RegistrationStatus,
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   TeamInvitation,
   WorkspaceOverview,
 } from "@/types/api";
@@ -21,6 +25,7 @@ export async function getRegistrationStatus(eventId: number) {
   );
 }
 
+<<<<<<< HEAD
 export async function registerIndividual(eventId: number, data: RegisterIndividualPayload) {
   return apiRequest<StudentRegistration>(
     `/student/teams/register/individual/${eventId}`,
@@ -35,6 +40,8 @@ export async function registerTeam(eventId: number, data: RegisterTeamPayload) {
   );
 }
 
+=======
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 export async function getWorkspaceOverview(eventId: number) {
   return apiRequest<WorkspaceOverview>(
     `/student/teams/my-team/workspace?eventId=${eventId}`,

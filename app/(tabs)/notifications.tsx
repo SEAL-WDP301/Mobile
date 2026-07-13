@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  StatusBar
+  StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -16,23 +17,36 @@ import {
   Trophy,
   GraduationCap,
   Megaphone,
-  UserPlus
+  UserPlus,
 } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
-
-const SEED = [
-  { id: 1, type: "Team", icon: UserPlus, title: "Team invitation", body: "Async Wolves invited you to join their team.", time: "2m", unread: true },
-  { id: 2, type: "Deadline", icon: Clock, title: "Sprint 2 closes in 2 days", body: "Submit your build before Aug 4 · 23:59.", time: "1h", unread: true },
-  { id: 3, type: "Ranking", icon: Trophy, title: "You moved up to #12", body: "Quantum Drift overtook 4 teams in 24 hours.", time: "5h", unread: true },
-  { id: 4, type: "Mentor", icon: GraduationCap, title: "Mentor assigned", body: "Mr. Hoang Pham is now mentoring your team.", time: "1d", unread: false },
-  { id: 5, type: "Event", icon: Megaphone, title: "AI Agents track unlocked", body: "Cross-team submissions are now allowed.", time: "2d", unread: false },
-];
+import { useNotifications } from "@/hooks/useNotifications";
+import { formatRelativeTime, mapNotificationType } from "@/utils/format";
+import type { LucideIcon } from "lucide-react-native";
 
 const FILTERS = ["All", "Team", "Event", "Deadline", "Ranking", "Mentor"];
 
+function iconForType(type: string): LucideIcon {
+  if (type.includes("team") || type.includes("invite")) return UserPlus;
+  if (type.includes("round") || type.includes("deadline")) return Clock;
+  if (type.includes("result") || type.includes("finalist")) return Trophy;
+  if (type.includes("mentor") || type.includes("judge")) return GraduationCap;
+  return Megaphone;
+}
+
+function filterCategory(type: string): string {
+  if (type.includes("team")) return "Team";
+  if (type.includes("round") || type.includes("registration")) return "Event";
+  if (type.includes("deadline") || type.includes("round_opened")) return "Deadline";
+  if (type.includes("result") || type.includes("final")) return "Ranking";
+  if (type.includes("mentor") || type.includes("judge")) return "Mentor";
+  return "Event";
+}
+
 export default function NotificationsScreen() {
   const { isDark } = useTheme();
-  const [items, setItems] = useState(SEED);
+  const { items, loading, unreadCount, markRead, markAllRead, remove } =
+    useNotifications();
   const [activeFilter, setActiveFilter] = useState("All");
 
   const colors = {
@@ -43,26 +57,39 @@ export default function NotificationsScreen() {
     textSecondary: isDark ? "#A39690" : "#78716C",
     textMuted: isDark ? "#57534E" : "#A8A29E",
     accent: "#f37021",
-    subAccent: "#ff9248",
   };
 
-  const filtered = activeFilter === "All" ? items : items.filter((i) => i.type === activeFilter);
-  const unreadCount = items.filter((i) => i.unread).length;
+  const mapped = useMemo(
+    () =>
+      items.map((n) => ({
+        id: n.id,
+        type: filterCategory(n.type),
+        rawType: n.type,
+        title: n.title,
+        body: n.content,
+        time: formatRelativeTime(n.createdAt),
+        unread: !n.isRead,
+        icon: iconForType(n.type),
+        typeLabel: mapNotificationType(n.type),
+      })),
+    [items],
+  );
 
-  const markAllRead = () => setItems((arr) => arr.map((i) => ({ ...i, unread: false })));
-  const toggleRead = (id: number) =>
-    setItems((arr) => arr.map((i) => (i.id === id ? { ...i, unread: !i.unread } : i)));
-  const removeItem = (id: number) => setItems((arr) => arr.filter((i) => i.id !== id));
+  const filtered =
+    activeFilter === "All"
+      ? mapped
+      : mapped.filter((i) => i.type === activeFilter);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* Screen Header */}
       <View style={styles.header}>
         <View>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Notifications</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>{unreadCount} unread</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Thông báo</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+            {unreadCount} chưa đọc
+          </Text>
         </View>
 
         {unreadCount > 0 && (
@@ -72,16 +99,12 @@ export default function NotificationsScreen() {
             activeOpacity={0.8}
           >
             <CheckCheck size={12} color={colors.accent} />
-            <Text style={[styles.readAllBtnText, { color: colors.accent }]}>Read all</Text>
+            <Text style={[styles.readAllBtnText, { color: colors.accent }]}>Đọc tất cả</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ================= FILTER CHIPS ================= */}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -119,12 +142,15 @@ export default function NotificationsScreen() {
           })}
         </ScrollView>
 
-        {/* ================= NOTIFICATIONS LIST ================= */}
         <View style={styles.listContainer}>
-          {filtered.length === 0 ? (
+          {loading ? (
+            <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 24 }} />
+          ) : filtered.length === 0 ? (
             <View style={[styles.emptyCard, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
               <Bell size={32} color={colors.textSecondary} />
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>You're all caught up.</Text>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                Không có thông báo nào.
+              </Text>
             </View>
           ) : (
             filtered.map((n) => {
@@ -140,53 +166,55 @@ export default function NotificationsScreen() {
                     },
                   ]}
                 >
-                  {/* Unread indicator dot */}
                   {n.unread && <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />}
 
                   <View style={styles.itemContent}>
-                    {/* Left Icon Wrapper */}
                     <View
                       style={[
                         styles.iconWrapper,
                         {
-                          backgroundColor: n.unread ? colors.accent : (isDark ? "#292524" : "#E7E5E4"),
+                          backgroundColor: n.unread
+                            ? colors.accent
+                            : isDark
+                              ? "#292524"
+                              : "#E7E5E4",
                         },
                       ]}
                     >
                       <IconComponent size={16} color={n.unread ? "#FFFFFF" : colors.accent} />
                     </View>
 
-                    {/* Notification Text */}
                     <View style={styles.textWrapper}>
                       <View style={styles.metaRow}>
                         <View style={[styles.typeBadge, { backgroundColor: isDark ? "#292524" : "#E7E5E4" }]}>
-                          <Text style={[styles.typeBadgeText, { color: colors.textSecondary }]}>{n.type}</Text>
+                          <Text style={[styles.typeBadgeText, { color: colors.textSecondary }]}>
+                            {n.typeLabel}
+                          </Text>
                         </View>
-                        <Text style={[styles.timeText, { color: colors.textMuted }]}>{n.time} ago</Text>
+                        <Text style={[styles.timeText, { color: colors.textMuted }]}>{n.time}</Text>
                       </View>
 
                       <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>{n.title}</Text>
                       <Text style={[styles.itemBody, { color: colors.textSecondary }]}>{n.body}</Text>
 
-                      {/* Action buttons */}
                       <View style={styles.itemActions}>
                         <TouchableOpacity
-                          onPress={() => toggleRead(n.id)}
+                          onPress={() => (n.unread ? markRead(n.id) : undefined)}
                           style={[styles.actionBtn, { backgroundColor: isDark ? "#292524" : "#E7E5E4" }]}
                           activeOpacity={0.8}
                         >
                           <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>
-                            {n.unread ? "Mark read" : "Mark unread"}
+                            {n.unread ? "Đánh dấu đã đọc" : "Đã đọc"}
                           </Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                          onPress={() => removeItem(n.id)}
+                          onPress={() => remove(n.id)}
                           style={[styles.actionBtn, styles.actionBtnDanger]}
                           activeOpacity={0.8}
                         >
                           <Trash2 size={12} color="#ef4444" />
-                          <Text style={[styles.actionBtnText, { color: "#ef4444" }]}>Delete</Text>
+                          <Text style={[styles.actionBtnText, { color: "#ef4444" }]}>Xóa</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -202,9 +230,7 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -213,15 +239,8 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "900",
-    letterSpacing: -0.3,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
+  headerTitle: { fontSize: 24, fontWeight: "900", letterSpacing: -0.3 },
+  headerSubtitle: { fontSize: 13, marginTop: 2 },
   readAllBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -230,34 +249,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 99,
   },
-  readAllBtnText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 110,
-  },
-  filterScrollView: {
-    marginBottom: 12,
-    marginHorizontal: -16,
-  },
-  filterContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  filterChipText: {
-    fontSize: 12,
-  },
-  listContainer: {
-    gap: 10,
-  },
+  readAllBtnText: { fontSize: 11, fontWeight: "700" },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 110 },
+  filterScrollView: { marginBottom: 12, marginHorizontal: -16 },
+  filterContent: { paddingHorizontal: 16, gap: 8 },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  filterChipText: { fontSize: 12 },
+  listContainer: { gap: 10 },
   emptyCard: {
     padding: 40,
     borderRadius: 24,
@@ -266,9 +264,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 24,
   },
-  emptyText: {
-    fontSize: 13,
-  },
+  emptyText: { fontSize: 13 },
   notificationItem: {
     borderRadius: 18,
     borderWidth: 1,
@@ -284,10 +280,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  itemContent: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
+  itemContent: { flexDirection: "row", alignItems: "flex-start" },
   iconWrapper: {
     width: 40,
     height: 40,
@@ -295,43 +288,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  textWrapper: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  typeBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 99,
-  },
-  typeBadgeText: {
-    fontSize: 8,
-    fontWeight: "800",
-    textTransform: "uppercase",
-  },
-  timeText: {
-    fontSize: 10,
-  },
-  itemTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginTop: 6,
-  },
-  itemBody: {
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  itemActions: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
-  },
+  textWrapper: { flex: 1, marginLeft: 12 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  typeBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 99 },
+  typeBadgeText: { fontSize: 8, fontWeight: "800", textTransform: "uppercase" },
+  timeText: { fontSize: 10 },
+  itemTitle: { fontSize: 14, fontWeight: "700", marginTop: 6 },
+  itemBody: { fontSize: 12, lineHeight: 18, marginTop: 4 },
+  itemActions: { flexDirection: "row", gap: 8, marginTop: 12 },
   actionBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -340,11 +304,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
-  actionBtnDanger: {
-    backgroundColor: "rgba(239, 68, 68, 0.05)",
-  },
-  actionBtnText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
+  actionBtnDanger: { backgroundColor: "rgba(239, 68, 68, 0.05)" },
+  actionBtnText: { fontSize: 11, fontWeight: "600" },
 });

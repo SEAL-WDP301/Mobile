@@ -21,7 +21,11 @@ interface EventContextType {
 const EventContext = createContext<EventContextType>({} as EventContextType);
 
 export function EventProvider({ children }: { children: React.ReactNode }) {
+<<<<<<< HEAD
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+=======
+  const { isAuthenticated } = useAuth();
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   const [myEvents, setMyEvents] = useState<MyEventEntry[]>([]);
   const [selectedEventId, setSelectedEventIdState] = useState<number | null>(
     null,
@@ -29,11 +33,17 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const refreshMyEvents = useCallback(async () => {
+<<<<<<< HEAD
     if (authLoading || !isAuthenticated) {
       setMyEvents([]);
       if (!isAuthenticated) {
         setSelectedEventIdState(null);
       }
+=======
+    if (!isAuthenticated) {
+      setMyEvents([]);
+      setSelectedEventIdState(null);
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
       return;
     }
     setIsLoading(true);
@@ -49,10 +59,17 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
+<<<<<<< HEAD
   }, [authLoading, isAuthenticated]);
 
   useEffect(() => {
     void refreshMyEvents().catch(() => undefined);
+=======
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    refreshMyEvents();
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   }, [refreshMyEvents]);
 
   const setSelectedEventId = useCallback((id: number) => {

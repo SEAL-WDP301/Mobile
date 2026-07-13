@@ -14,7 +14,11 @@ import { ChevronLeft, QrCode, ShieldAlert, Copy, RefreshCw } from "lucide-react-
 import { useTheme } from "@/constants/theme/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSelectedEvent } from "@/contexts/EventContext";
+<<<<<<< HEAD
 import { formatParticipantPassId } from "@/constants/config";
+=======
+import { getInitials } from "@/utils/format";
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
 const { width } = Dimensions.get("window");
 
@@ -27,6 +31,7 @@ export default function ParticipantPassScreen() {
   const studentId = user?.studentProfile?.studentCode ?? "—";
   const university = user?.studentProfile?.universityName ?? "—";
   const teamName = selectedEvent?.teamName ?? "—";
+<<<<<<< HEAD
   const eventLabel = selectedEvent?.event.name ?? "—";
   const eventYear = selectedEvent?.event.year ?? new Date().getFullYear();
   const passId = formatParticipantPassId(
@@ -34,6 +39,11 @@ export default function ParticipantPassScreen() {
     selectedEvent?.teamId,
     user?.id,
   );
+=======
+  const passId = selectedEvent
+    ? `SEAL-${selectedEvent.event.year}-${String(selectedEvent.teamId).padStart(4, "0")}`
+    : "SEAL-PASS";
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -101,7 +111,11 @@ export default function ParticipantPassScreen() {
           {/* Participant Info */}
           <View style={styles.passDetails}>
             <Text style={[styles.passRoleLabel, { color: colors.accent }]}>
+<<<<<<< HEAD
               {eventLabel.toUpperCase()}
+=======
+              {selectedEvent?.event.name?.toUpperCase() ?? "SEAL"}
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
             </Text>
             <Text style={[styles.passNameText, { color: colors.textPrimary }]}>{displayName}</Text>
             <Text style={[styles.passUniText, { color: colors.textSecondary }]}>

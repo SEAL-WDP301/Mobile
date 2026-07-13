@@ -61,6 +61,7 @@ export interface Track {
   id: number;
   name: string;
   description?: string | null;
+<<<<<<< HEAD
   maxMembersPerTeam?: number | null;
 }
 
@@ -91,6 +92,8 @@ export interface RegisteredTeam {
   status: string;
   eventId: number;
   trackId: number;
+=======
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 }
 
 export interface Round {
@@ -141,14 +144,21 @@ export interface TeamInfo {
   id: number;
   name: string;
   status: string;
+<<<<<<< HEAD
   githubRepoUrl?: string | null;
+=======
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   track?: Track;
   members?: TeamMemberEntry[];
   mentorAssignments?: MentorAssignment[];
 }
 
 export interface RegistrationStatus {
+<<<<<<< HEAD
   individualRegistration?: StudentRegistration | null;
+=======
+  individualRegistration?: unknown;
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   teamInfo?: {
     role: string;
     status: string;

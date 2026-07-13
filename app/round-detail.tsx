@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useMemo, useState } from "react";
+=======
+import React, { useMemo } from "react";
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 import {
   View,
   Text,
@@ -8,6 +12,7 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
+<<<<<<< HEAD
   TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,6 +23,15 @@ import { useEventContext } from "@/contexts/EventContext";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { submitProject } from "@/services/api/submissions";
 import { ApiError } from "@/services/api/client";
+=======
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { ChevronLeft, Clock, CheckCircle, AlertTriangle, ExternalLink } from "lucide-react-native";
+import { useTheme } from "@/constants/theme/useTheme";
+import { useEventContext } from "@/contexts/EventContext";
+import { useWorkspace } from "@/hooks/useWorkspace";
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 import {
   computeDeadlineProgress,
   computeTimeLeft,
@@ -28,11 +42,15 @@ import {
 export default function RoundDetailScreen() {
   const { isDark } = useTheme();
   const { selectedEventId } = useEventContext();
+<<<<<<< HEAD
   const { data: workspace, loading, refresh } = useWorkspace(selectedEventId);
 
   const [githubUrl, setGithubUrl] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
+=======
+  const { data: workspace, loading } = useWorkspace(selectedEventId);
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   const activeEntry = useMemo(() => {
     if (!workspace) return null;
@@ -48,7 +66,10 @@ export default function RoundDetailScreen() {
   const round = activeEntry?.round;
   const submission = activeEntry?.submission;
   const hasSubmitted = !!submission;
+<<<<<<< HEAD
   const canSubmit = !!activeEntry?.canSubmit && !!selectedEventId;
+=======
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -62,6 +83,7 @@ export default function RoundDetailScreen() {
     warning: "#F59E0B",
   };
 
+<<<<<<< HEAD
   const handleSubmit = async () => {
     if (!canSubmit || !selectedEventId || !round) return;
 
@@ -90,6 +112,14 @@ export default function RoundDetailScreen() {
     } finally {
       setSubmitting(false);
     }
+=======
+  const handleOpenWeb = () => {
+    Alert.alert(
+      "Mở cổng nộp bài",
+      "Vui lòng sử dụng SEAL Web để nộp hoặc cập nhật bài làm.",
+      [{ text: "OK", style: "cancel" }],
+    );
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   };
 
   if (loading) {
@@ -160,7 +190,11 @@ export default function RoundDetailScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.alertTitle, { color: colors.success }]}>Đã ghi nhận bài nộp</Text>
                   <Text style={[styles.alertBody, { color: colors.textSecondary }]}>
+<<<<<<< HEAD
                     Nộp lúc {formatDateTime(submission?.submittedAt)}. Bạn có thể cập nhật lại trước hạn.
+=======
+                    Nộp lúc {formatDateTime(submission?.submittedAt)}. Cập nhật bài trên Web trước hạn.
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
                   </Text>
                 </View>
               </View>
@@ -189,7 +223,11 @@ export default function RoundDetailScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.alertTitle, { color: colors.warning }]}>Chưa ghi nhận bài nộp</Text>
                   <Text style={[styles.alertBody, { color: colors.textSecondary }]}>
+<<<<<<< HEAD
                     {activeEntry?.lockReason ?? "Vui lòng nộp bài trước deadline."}
+=======
+                    {activeEntry?.lockReason ?? "Vui lòng nộp bài trên SEAL Web trước deadline."}
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
                   </Text>
                 </View>
               </View>
@@ -197,6 +235,7 @@ export default function RoundDetailScreen() {
           )}
         </View>
 
+<<<<<<< HEAD
         {canSubmit && (
           <View style={[styles.formBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 12 }]}>
@@ -238,6 +277,16 @@ export default function RoundDetailScreen() {
             </TouchableOpacity>
           </View>
         )}
+=======
+        <TouchableOpacity
+          style={[styles.webPortalBtn, { backgroundColor: colors.accent }]}
+          onPress={handleOpenWeb}
+          activeOpacity={0.85}
+        >
+          <ExternalLink size={18} color="#FFFFFF" />
+          <Text style={styles.webPortalBtnText}>Mở SEAL Web để nộp bài</Text>
+        </TouchableOpacity>
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
       </ScrollView>
     </SafeAreaView>
   );
@@ -275,6 +324,7 @@ const styles = StyleSheet.create({
   detailsBlock: { padding: 14, borderRadius: 12 },
   detailLabel: { fontSize: 11, fontWeight: "600" },
   detailValue: { fontSize: 13, marginTop: 4 },
+<<<<<<< HEAD
   formBox: { borderRadius: 16, borderWidth: 1, padding: 16 },
   hint: { fontSize: 12, marginBottom: 12, lineHeight: 18 },
   inputLabel: { fontSize: 11, fontWeight: "700", marginBottom: 6, textTransform: "uppercase" },
@@ -282,4 +332,15 @@ const styles = StyleSheet.create({
   textArea: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, minHeight: 80, textAlignVertical: "top" },
   submitBtn: { marginTop: 16, padding: 16, borderRadius: 14, alignItems: "center" },
   submitBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+=======
+  webPortalBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 16,
+    borderRadius: 14,
+  },
+  webPortalBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 });

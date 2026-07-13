@@ -15,6 +15,10 @@ import { useTheme } from "@/constants/theme/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocale } from "@/contexts/LocaleContext";
 import { updateStudentProfile } from "@/services/api/users";
+<<<<<<< HEAD
+=======
+import { getSkills, saveSkills } from "@/services/profileStorage";
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 import { ApiError } from "@/services/api/client";
 import { User, Mail, Phone, GraduationCap } from "lucide-react-native";
 
@@ -29,6 +33,10 @@ export default function PersonalInfoScreen() {
   const [studentCode, setStudentCode] = useState("");
   const [universityName, setUniversityName] = useState("");
   const [phone, setPhone] = useState("");
+<<<<<<< HEAD
+=======
+  const [skills, setSkills] = useState("");
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   const [loading, setLoading] = useState(false);
 
   const colors = {
@@ -48,6 +56,10 @@ export default function PersonalInfoScreen() {
       setUniversityName(profile.universityName ?? "");
       setPhone(profile.phone ?? "");
     }
+<<<<<<< HEAD
+=======
+    getSkills().then(setSkills);
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   }, [user]);
 
   const handleSave = async () => {
@@ -64,6 +76,10 @@ export default function PersonalInfoScreen() {
         universityName: universityName.trim() || undefined,
         phone: phone.trim() || undefined,
       });
+<<<<<<< HEAD
+=======
+      await saveSkills(skills.trim());
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
       await refreshProfile();
       Alert.alert("OK", t.profile.saved);
     } catch (error) {
@@ -138,7 +154,11 @@ export default function PersonalInfoScreen() {
           <Input
             value={universityName}
             onChangeText={setUniversityName}
+<<<<<<< HEAD
             placeholder="Nhập trường học"
+=======
+            placeholder="FPT University HCM"
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
             leftIcon={<GraduationCap size={18} color={colors.textPrimary} />}
           />
 
@@ -146,10 +166,24 @@ export default function PersonalInfoScreen() {
           <Input
             value={phone}
             onChangeText={setPhone}
+<<<<<<< HEAD
             placeholder="Nhập số điện thoại"
             keyboardType="phone-pad"
             leftIcon={<Phone size={18} color={colors.textPrimary} />}
           />
+=======
+            placeholder="0901234567"
+            keyboardType="phone-pad"
+            leftIcon={<Phone size={18} color={colors.textPrimary} />}
+          />
+
+          <Text style={[styles.label, { color: colors.textSecondary, marginTop: 12 }]}>{t.profile.skills}</Text>
+          <Input
+            value={skills}
+            onChangeText={setSkills}
+            placeholder={t.profile.skillsHint}
+          />
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
         </View>
 
         <Button title={loading ? "..." : t.profile.save} onPress={handleSave} />

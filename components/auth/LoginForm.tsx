@@ -1,8 +1,17 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+<<<<<<< HEAD
 import { router } from "expo-router";
 import { Mail, Lock } from "lucide-react-native";
 import { FontAwesome } from "@expo/vector-icons";
+=======
+
+import { router } from "expo-router";
+
+import { Mail, Lock } from "lucide-react-native";
+import { FontAwesome } from "@expo/vector-icons";
+
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
@@ -51,7 +60,13 @@ export default function LoginForm() {
       router.replace("/(tabs)");
     } catch (error) {
       const message =
+<<<<<<< HEAD
         error instanceof Error ? error.message : "Đăng nhập GitHub thất bại.";
+=======
+        error instanceof Error
+          ? error.message
+          : "Đăng nhập GitHub thất bại.";
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
       if (message !== "Đăng nhập GitHub đã bị hủy.") {
         Alert.alert("Đăng nhập GitHub thất bại", message);
       }
@@ -122,8 +137,19 @@ export default function LoginForm() {
 }
 
 const styles = StyleSheet.create({
+<<<<<<< HEAD
   container: { gap: 16 },
   row: { flexDirection: "row", alignItems: "center", gap: 8 },
+=======
+  container: {
+    gap: 16,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   optionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -138,5 +164,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
+<<<<<<< HEAD
   registerLink: { flexDirection: "row", justifyContent: "center", gap: 6 },
+=======
+  registerLink: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+  },
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 });

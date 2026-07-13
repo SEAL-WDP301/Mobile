@@ -35,10 +35,21 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useTeamStatus } from "@/hooks/useTeamStatus";
 import { useNotifications } from "@/hooks/useNotifications";
 import {
+<<<<<<< HEAD
   computeDeadlineProgress,
   computeTimeLeft,
   formatDateTime,
   formatRelativeTime,
+=======
+  TIMELINE_ACTIVITIES,
+  ANNOUNCEMENTS,
+  MOCK_MENTOR,
+} from "@/constants/mockData";
+import {
+  computeDeadlineProgress,
+  computeTimeLeft,
+  formatDateTime,
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   getInitials,
   mapRoundStatusLabel,
   mapTeamRoleLabel,
@@ -53,7 +64,11 @@ export default function HomeScreen() {
   const selectedEvent = useSelectedEvent();
   const { data: workspace } = useWorkspace(selectedEventId);
   const { data: teamStatus } = useTeamStatus(selectedEventId);
+<<<<<<< HEAD
   const { unreadCount, items: notificationItems } = useNotifications();
+=======
+  const { unreadCount } = useNotifications();
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   const activeEntry = workspace?.roundSubmissions?.find(
     (r) => r.round.id === workspace.currentActiveRound?.id,
@@ -67,7 +82,11 @@ export default function HomeScreen() {
 
   const displayName = user?.name ?? "Bạn";
   const roleLabel = workspace?.role ? mapTeamRoleLabel(workspace.role) : "Sinh viên";
+<<<<<<< HEAD
   const eventName = selectedEvent?.event.name ?? myEvents[0]?.event.name ?? "Cuộc thi";
+=======
+  const eventName = selectedEvent?.event.name ?? myEvents[0]?.event.name ?? "SEAL";
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   const teamName = team?.name ?? selectedEvent?.teamName ?? "—";
   const trackName = team?.track?.name ?? "—";
   const teamInitials = getInitials(teamName);
@@ -93,7 +112,11 @@ export default function HomeScreen() {
     border: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
   };
 
+<<<<<<< HEAD
   const recentNotifications = notificationItems.slice(0, 3);
+=======
+  const nextActivity = TIMELINE_ACTIVITIES.find((a) => a.status === "upcoming") || TIMELINE_ACTIVITIES[0];
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
@@ -231,7 +254,17 @@ export default function HomeScreen() {
             Lịch trình sự kiện sẽ hiển thị khi BTC cập nhật trên hệ thống.
           </Text>
 
+<<<<<<< HEAD
           <TouchableOpacity
+=======
+          {nextActivity.type === "Mentoring" && (
+            <Text style={[styles.activityMentorInfo, { color: colors.textSecondary }]}>
+              Người hướng dẫn: <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>{nextActivity.mentorName || mentor?.name || MOCK_MENTOR.name}</Text>
+            </Text>
+          )}
+
+          <TouchableOpacity 
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
             style={[styles.activityActionBtn, { backgroundColor: colors.cardElevated }]}
             activeOpacity={0.8}
             onPress={() => router.push("/(tabs)/schedule")}
@@ -318,7 +351,11 @@ export default function HomeScreen() {
           <View style={styles.mentorBriefRow}>
             <Text style={[styles.mentorBriefLabel, { color: colors.textSecondary }]}>Mentor:</Text>
             <Text style={[styles.mentorBriefValue, { color: colors.textPrimary }]}>
+<<<<<<< HEAD
               {mentor?.name ?? "Chưa phân công"}
+=======
+              {mentor?.name ?? MOCK_MENTOR.name}
+>>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
             </Text>
           </View>
 

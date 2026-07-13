@@ -144,7 +144,7 @@ export default function StateShowcaseScreen() {
               <Users size={40} color={colors.accent} style={styles.stateIcon} />
               <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Chưa tham gia đội thi</Text>
               <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-                Vui lòng lập nhóm hoặc tham gia vào một đội thi hiện có trên SEAL Web để tiếp tục tham gia cuộc thi.
+                Vui lòng tạo hoặc tham gia đội thi để tiếp tục.
               </Text>
             </View>
           </View>
@@ -172,7 +172,7 @@ export default function StateShowcaseScreen() {
               <Clock size={40} color={colors.warning} style={styles.stateIcon} />
               <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Cuộc thi chưa bắt đầu</Text>
               <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-                Sự kiện SEAL Summer 2026 sẽ chính thức khởi tranh vào ngày 15/06/2026. Hãy chuẩn bị sẵn sàng cùng đồng đội nhé!
+                Cuộc thi chưa bắt đầu. Thông tin thời gian sẽ được cập nhật trên hệ thống.
               </Text>
             </View>
           </View>
@@ -186,7 +186,7 @@ export default function StateShowcaseScreen() {
               <CheckCircle size={40} color={colors.success} style={styles.stateIcon} />
               <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Cuộc thi đã khép lại</Text>
               <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-                Cảm ơn bạn đã đồng hành cùng SEAL Hackathon. Hẹn gặp lại bạn ở những mùa giải học thuật tiếp theo!
+                Cảm ơn bạn đã tham gia. Hẹn gặp lại ở các mùa giải tiếp theo!
               </Text>
             </View>
           </View>
@@ -214,7 +214,7 @@ export default function StateShowcaseScreen() {
               <Sparkles size={40} color={colors.success} style={styles.stateIcon} />
               <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Lọt vào Vòng Chung Kết!</Text>
               <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-                Chúc mừng Team Phoenix đã xuất sắc lọt vào Top 16 đội thi bước tiếp vào vòng chung kết tranh tài trực tiếp!
+                Chúc mừng đội của bạn đã đủ điều kiện bước tiếp vào vòng sau!
               </Text>
             </View>
           </View>
@@ -228,7 +228,7 @@ export default function StateShowcaseScreen() {
               <FileQuestion size={40} color={colors.warning} style={styles.stateIcon} />
               <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Chưa ghi nhận bài nộp</Text>
               <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-                Vòng thi hiện tại chưa nhận được tệp hoặc liên kết dự án từ đội thi của bạn. Vui lòng nộp bài trên SEAL Web.
+                Vòng thi hiện tại chưa ghi nhận bài nộp. Vui lòng nộp bài trước deadline.
               </Text>
             </View>
           </View>

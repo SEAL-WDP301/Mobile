@@ -1,18 +1,21 @@
+import { ActivityIndicator, View } from "react-native";
 import { Redirect } from "expo-router";
-
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Index() {
-    const { isAuthenticated } =
-        useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-    if (isAuthenticated) {
-        return (
-            <Redirect href="/(tabs)" />
-        );
-    }
-
+  if (isLoading) {
     return (
-        <Redirect href="/auth/login" />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#F37021" />
+      </View>
     );
+  }
+
+  if (isAuthenticated) {
+    return <Redirect href="/(tabs)" />;
+  }
+
+  return <Redirect href="/auth/login" />;
 }

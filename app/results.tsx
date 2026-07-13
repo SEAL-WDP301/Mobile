@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,19 +6,43 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  Dimensions,
-  Alert
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { ChevronLeft, Trophy, Award, MessageSquare, Info, Star, Bookmark } from "lucide-react-native";
+import { ChevronLeft, MessageSquare, Info, Trophy } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
-import { JUDGE_RESULTS, GENERAL_STATS } from "@/constants/mockData";
-
-const { width } = Dimensions.get("window");
+import { useEventContext } from "@/contexts/EventContext";
+import { useTeamStatus } from "@/hooks/useTeamStatus";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { getMentorFeedback } from "@/services/api/teams";
+import type { MentorFeedback } from "@/types/api";
+import { formatDateTime } from "@/utils/format";
 
 export default function ResultsScreen() {
   const { isDark } = useTheme();
+  const { selectedEventId } = useEventContext();
+  const { data: teamStatus } = useTeamStatus(selectedEventId);
+  const { data: workspace } = useWorkspace(selectedEventId);
+
+  const [feedbacks, setFeedbacks] = useState<MentorFeedback[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const team = teamStatus?.teamInfo?.team;
+  const teamName = team?.name ?? "Đội của bạn";
+  const scoredRounds =
+    workspace?.roundSubmissions?.filter(
+      (entry) => entry.teamRound?.score != null,
+    ) ?? [];
+
+  useEffect(() => {
+    if (!selectedEventId) return;
+    setLoading(true);
+    getMentorFeedback(selectedEventId)
+      .then(setFeedbacks)
+      .catch(() => setFeedbacks([]))
+      .finally(() => setLoading(false));
+  }, [selectedEventId]);
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -28,19 +52,13 @@ export default function ResultsScreen() {
     textSecondary: isDark ? "#A8A29E" : "#78716C",
     accent: "#F37021",
     border: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
-    success: "#10B981",
     info: "#06B6D4",
   };
-
-  // Calculate average score
-  const totalScore = JUDGE_RESULTS.reduce((acc, curr) => acc + curr.score, 0);
-  const averageScore = (totalScore / JUDGE_RESULTS.length).toFixed(1);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top", "bottom"]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* ================= HEADER ================= */}
       <View style={[styles.appHeader, { borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ChevronLeft size={24} color={colors.textPrimary} />
@@ -50,87 +68,102 @@ export default function ResultsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
-        {/* ================= SUMMARY SCORE CARD ================= */}
         <View style={[styles.summaryCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <View style={[styles.summaryGlow, { backgroundColor: colors.accent, opacity: isDark ? 0.08 : 0.03 }]} />
-          
-          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>SEAL SUMMER 2026 · ROUND 1</Text>
-          <Text style={[styles.teamName, { color: colors.textPrimary }]}>Team Phoenix</Text>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statCol}>
-              <Text style={[styles.statTitle, { color: colors.textSecondary }]}>ĐIỂM TRUNG BÌNH</Text>
-              <View style={styles.scoreRow}>
-                <Text style={[styles.scoreValue, { color: colors.accent }]}>{averageScore}</Text>
-                <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/ 10</Text>
-              </View>
-            </View>
-            <View style={[styles.statColDivider, { backgroundColor: colors.border }]} />
-            <View style={styles.statCol}>
-              <Text style={[styles.statTitle, { color: colors.textSecondary }]}>XẾP HẠNG HIỆN TẠI</Text>
-              <View style={styles.scoreRow}>
-                <Trophy size={20} color={colors.warning} style={{ marginRight: 6, marginTop: 4 }} />
-                <Text style={[styles.rankValue, { color: colors.textPrimary }]}>#{GENERAL_STATS.currentRank}</Text>
-                <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/ {GENERAL_STATS.totalTeams}</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={[styles.resultBadge, { backgroundColor: "rgba(16, 185, 129, 0.12)" }]}>
-            <Text style={[styles.resultBadgeText, { color: colors.success }]}>
-              ĐỦ ĐIỀU KIỆN VÀO CHUNG KẾT (TOP 16)
-            </Text>
-          </View>
-        </View>
-
-        {/* ================= RESEARCH BACKGROUND NOTE ================= */}
-        <View style={[styles.researchBox, { backgroundColor: `${colors.info}10`, borderColor: `${colors.info}30` }]}>
-          <Info size={16} color={colors.info} style={{ marginRight: 10, marginTop: 2 }} />
-          <Text style={[styles.researchText, { color: colors.info }]}>
-            Điểm số hiển thị là kết quả trung bình đánh giá độc lập từ Ban Giám Khảo. Dữ liệu được mã hóa phục vụ nghiên cứu khoa học về độ tin cậy liên đánh giá viên (ICC) trong Kỹ nghệ Phần mềm.
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>NHẬN XÉT TỪ MENTOR</Text>
+          <Text style={[styles.teamName, { color: colors.textPrimary }]}>{teamName}</Text>
+          <Text style={[styles.feedbackCount, { color: colors.textSecondary }]}>
+            {feedbacks.length} nhận xét
           </Text>
         </View>
 
-        {/* ================= DETAILED CRITERIA & FEEDBACK ================= */}
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginLeft: 4 }]}>CHI TIẾT ĐIỂM THEO TIÊU CHÍ</Text>
-        
-        <View style={styles.feedbackList}>
-          {JUDGE_RESULTS.map((result, idx) => (
-            <View key={idx} style={[styles.feedbackCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-              <View style={styles.feedbackCardHeader}>
-                <View style={styles.criteriaInfo}>
-                  <Text style={[styles.criteriaIndex, { color: colors.accent }]}>TIÊU CHÍ 0{idx + 1}</Text>
-                  <Text style={[styles.criteriaNameText, { color: colors.textPrimary }]}>{result.criterion}</Text>
-                </View>
-                <View style={styles.criteriaScoreBox}>
-                  <Text style={[styles.criteriaScoreValue, { color: colors.accent }]}>{result.score.toFixed(1)}</Text>
-                  <Text style={[styles.criteriaScoreMax, { color: colors.textSecondary }]}>/{result.maxScore}</Text>
-                </View>
-              </View>
+        <View style={[styles.researchBox, { backgroundColor: `${colors.info}10`, borderColor: `${colors.info}30` }]}>
+          <Info size={16} color={colors.info} style={{ marginRight: 10, marginTop: 2 }} />
+          <Text style={[styles.researchText, { color: colors.info }]}>
+            Điểm vòng thi và nhận xét mentor được lấy trực tiếp từ hệ thống SEAL.
+          </Text>
+        </View>
 
-              <View style={[styles.commentBox, { backgroundColor: colors.cardElevated }]}>
-                <MessageSquare size={14} color={colors.accent} style={{ marginRight: 8, marginTop: 2 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.commentTitle, { color: colors.textPrimary }]}>Nhận xét của Giám khảo:</Text>
+        {scoredRounds.length > 0 && (
+          <>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginLeft: 4 }]}>
+              ĐIỂM THEO VÒNG
+            </Text>
+            <View style={styles.feedbackList}>
+              {scoredRounds.map((entry) => (
+                <View
+                  key={entry.round.id}
+                  style={[styles.feedbackCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+                >
+                  <View style={styles.feedbackCardHeader}>
+                    <Text style={[styles.mentorName, { color: colors.textPrimary }]}>
+                      {entry.round.name}
+                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Trophy size={14} color={colors.accent} />
+                      <Text style={[styles.scoreText, { color: colors.accent }]}>
+                        {Number(entry.teamRound?.score).toFixed(1)}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.roundLabel, { color: colors.textSecondary }]}>
+                    Trạng thái: {entry.teamRound?.status ?? "—"}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginLeft: 4, marginTop: 8 }]}>
+          NHẬN XÉT CHI TIẾT
+        </Text>
+
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 24 }} />
+        ) : feedbacks.length === 0 ? (
+          <View style={[styles.emptyCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <MessageSquare size={28} color={colors.textSecondary} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              Chưa có nhận xét nào từ mentor.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.feedbackList}>
+            {feedbacks.map((fb) => (
+              <View
+                key={fb.id}
+                style={[styles.feedbackCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+              >
+                <View style={styles.feedbackCardHeader}>
+                  <Text style={[styles.mentorName, { color: colors.textPrimary }]}>
+                    {fb.mentor?.name ?? "Mentor"}
+                  </Text>
+                  <Text style={[styles.feedbackDate, { color: colors.textSecondary }]}>
+                    {formatDateTime(fb.createdAt)}
+                  </Text>
+                </View>
+                {fb.submission?.round?.name && (
+                  <Text style={[styles.roundLabel, { color: colors.accent }]}>
+                    {fb.submission.round.name}
+                  </Text>
+                )}
+                <View style={[styles.commentBox, { backgroundColor: colors.cardElevated }]}>
+                  <MessageSquare size={14} color={colors.accent} style={{ marginRight: 8, marginTop: 2 }} />
                   <Text style={[styles.commentBodyText, { color: colors.textSecondary }]}>
-                    {result.comment}
+                    {fb.content}
                   </Text>
                 </View>
               </View>
-            </View>
-          ))}
-        </View>
-
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   appHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -139,100 +172,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  backBtn: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
-    gap: 16,
-  },
-  summaryCard: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 20,
-    overflow: "hidden",
-    position: "relative",
-  },
-  summaryGlow: {
-    position: "absolute",
-    right: -30,
-    top: -30,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-  },
-  summaryLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1,
-  },
-  teamName: {
-    fontSize: 22,
-    fontWeight: "900",
-    marginTop: 4,
-    marginBottom: 20,
-  },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  statCol: {
-    flex: 1,
-  },
-  statColDivider: {
-    width: 1,
-    height: 40,
-    marginHorizontal: 16,
-  },
-  statTitle: {
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  scoreRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    marginTop: 4,
-  },
-  scoreValue: {
-    fontSize: 32,
-    fontWeight: "900",
-    lineHeight: 38,
-  },
-  scoreMax: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 2,
-    marginBottom: 4,
-  },
-  rankValue: {
-    fontSize: 24,
-    fontWeight: "900",
-  },
-  resultBadge: {
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 4,
-  },
-  resultBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
+  backBtn: { width: 32, height: 32, justifyContent: "center", alignItems: "center" },
+  headerTitle: { fontSize: 16, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40, gap: 16 },
+  summaryCard: { borderRadius: 24, borderWidth: 1, padding: 20 },
+  summaryLabel: { fontSize: 10, fontWeight: "800", letterSpacing: 1 },
+  teamName: { fontSize: 22, fontWeight: "900", marginTop: 4 },
+  feedbackCount: { fontSize: 13, marginTop: 8 },
   researchBox: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -240,72 +186,28 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  researchText: {
-    fontSize: 12,
-    lineHeight: 18,
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  feedbackList: {
-    gap: 14,
-  },
-  feedbackCard: {
+  researchText: { fontSize: 12, lineHeight: 18, flex: 1 },
+  sectionTitle: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase" },
+  emptyCard: {
+    padding: 40,
     borderRadius: 20,
     borderWidth: 1,
-    padding: 14,
+    alignItems: "center",
+    gap: 12,
   },
+  emptyText: { fontSize: 13, textAlign: "center" },
+  feedbackList: { gap: 14 },
+  feedbackCard: { borderRadius: 20, borderWidth: 1, padding: 14 },
   feedbackCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
+    alignItems: "center",
+    marginBottom: 8,
   },
-  criteriaInfo: {
-    flex: 1,
-    marginRight: 10,
-  },
-  criteriaIndex: {
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  criteriaNameText: {
-    fontSize: 14,
-    fontWeight: "750",
-    marginTop: 2,
-    lineHeight: 18,
-  },
-  criteriaScoreBox: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-  },
-  criteriaScoreValue: {
-    fontSize: 20,
-    fontWeight: "900",
-  },
-  criteriaScoreMax: {
-    fontSize: 11,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  commentBox: {
-    borderRadius: 12,
-    padding: 10,
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  commentTitle: {
-    fontSize: 11,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  commentBodyText: {
-    fontSize: 12,
-    lineHeight: 17,
-  },
+  mentorName: { fontSize: 14, fontWeight: "700" },
+  scoreText: { fontSize: 16, fontWeight: "800" },
+  feedbackDate: { fontSize: 11 },
+  roundLabel: { fontSize: 11, fontWeight: "700", marginBottom: 8 },
+  commentBox: { borderRadius: 12, padding: 10, flexDirection: "row", alignItems: "flex-start" },
+  commentBodyText: { fontSize: 12, lineHeight: 17, flex: 1 },
 });

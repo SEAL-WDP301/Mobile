@@ -8,10 +8,7 @@ import {
 } from "react";
 import type { AuthUser } from "@/types/api";
 import * as authApi from "@/services/api/auth";
-<<<<<<< HEAD
 import { setUnauthorizedHandler } from "@/services/api/client";
-=======
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -30,7 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-<<<<<<< HEAD
     setUnauthorizedHandler(() => {
       setUser(null);
       setIsLoading(false);
@@ -56,19 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   }, []);
 
-=======
-    authApi.restoreSession().then((restored) => {
-      setUser(restored);
-      setIsLoading(false);
-    });
-  }, []);
-
-  const login = useCallback(async (email: string, password: string) => {
-    const data = await authApi.signIn(email, password);
-    setUser(data.user);
-  }, []);
-
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   const loginWithAccessToken = useCallback(async (accessToken: string) => {
     const profile = await authApi.completeOAuthLogin(accessToken);
     setUser(profile);

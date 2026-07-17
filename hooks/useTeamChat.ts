@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TeamChatMessage } from "@/types/api";
 import { getTeamMessages } from "@/services/api/chat";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   joinTeamRoom,
   leaveTeamRoom,
@@ -24,6 +25,7 @@ function mergeMessages(existing: TeamChatMessage[], incoming: TeamChatMessage[])
 }
 
 export function useTeamChat({ teamId, enabled = true }: UseTeamChatOptions) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [messages, setMessages] = useState<TeamChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -33,7 +35,10 @@ export function useTeamChat({ teamId, enabled = true }: UseTeamChatOptions) {
   const oldestCursorRef = useRef<number | null>(null);
 
   const loadInitial = useCallback(async () => {
-    if (!teamId || !enabled) return;
+    if (authLoading || !isAuthenticated || !teamId || !enabled) {
+      if (!authLoading && !isAuthenticated) setMessages([]);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -48,7 +53,7 @@ export function useTeamChat({ teamId, enabled = true }: UseTeamChatOptions) {
     } finally {
       setLoading(false);
     }
-  }, [teamId, enabled]);
+  }, [authLoading, isAuthenticated, teamId, enabled]);
 
   const loadMore = useCallback(async () => {
     if (!teamId || !enabled || loadingMore || !hasMore || !oldestCursorRef.current) return;
@@ -88,12 +93,12 @@ export function useTeamChat({ teamId, enabled = true }: UseTeamChatOptions) {
   );
 
   useEffect(() => {
-    if (!teamId || !enabled) {
+    if (!teamId || !enabled || authLoading || !isAuthenticated) {
       setMessages([]);
       return;
     }
 
-    loadInitial();
+    void loadInitial().catch(() => undefined);
 
     let active = true;
     let cleanupListeners: (() => void) | undefined;
@@ -143,7 +148,7 @@ export function useTeamChat({ teamId, enabled = true }: UseTeamChatOptions) {
         leaveTeamRoom(teamId).catch(() => undefined);
       }
     };
-  }, [teamId, enabled, loadInitial]);
+  }, [teamId, enabled, authLoading, isAuthenticated, loadInitial]);
 
   return {
     messages,

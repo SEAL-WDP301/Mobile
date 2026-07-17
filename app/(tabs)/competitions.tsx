@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  ActivityIndicator,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,6 +19,7 @@ import {
   formatEventSeason,
   mapEventStatusLabel,
 } from "@/utils/format";
+import { isEventRegistrationOpen } from "@/utils/eventRegistration";
 
 type Segment = "participating" | "open" | "ended";
 
@@ -34,15 +33,13 @@ interface DisplayEvent {
   statusLabel: string;
   myTeam: string;
   isActive: boolean;
+  registrationOpen: boolean;
 }
 
 export default function CompetitionsScreen() {
   const { isDark } = useTheme();
   const [activeSegment, setActiveSegment] = useState<Segment>("participating");
-  const { events: publicEvents, loading: loadingPublic } = usePublicEvents();
-  const { myEvents, isLoading: loadingMy } = useEventContext();
-  const [activeSegment, setActiveSegment] = useState<Segment>("participating");
-  const { events: publicEvents, loading: loadingPublic } = usePublicEvents();
+  const { events: publicEvents, loading: loadingPublic, error: publicEventsError } = usePublicEvents();
   const { myEvents, isLoading: loadingMy } = useEventContext();
 
   const colors = {
@@ -66,6 +63,7 @@ export default function CompetitionsScreen() {
     return publicEvents.map((event) => {
       const teamName = myEventMap.get(event.id) ?? "";
       const isActive = event.status === "active" || event.status === "ongoing";
+      const registrationOpen = isEventRegistrationOpen(event);
       return {
         id: event.id,
         name: event.name,
@@ -76,6 +74,7 @@ export default function CompetitionsScreen() {
         statusLabel: mapEventStatusLabel(event.status),
         myTeam: teamName,
         isActive,
+        registrationOpen,
       };
     });
   }, [publicEvents, myEventMap]);
@@ -85,18 +84,12 @@ export default function CompetitionsScreen() {
       return event.myTeam !== "";
     }
     if (activeSegment === "open") {
-      return event.status === "active" && event.myTeam === "";
+      return event.registrationOpen && event.myTeam === "";
     }
-    return event.status === "closed";
-  });
-
-  const loading = loadingPublic || loadingMy;
-      return event.myTeam !== "";
-    }
-    if (activeSegment === "open") {
-      return event.status === "active" && event.myTeam === "";
-    }
-    return event.status === "closed";
+    return (
+      event.status === "closed" ||
+      (!event.registrationOpen && event.myTeam === "")
+    );
   });
 
   const loading = loadingPublic || loadingMy;
@@ -107,9 +100,6 @@ export default function CompetitionsScreen() {
 
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Cuộc thi</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-          Các giải Hackathon thuộc hệ thống SEAL
-        </Text>
         <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
           Các giải Hackathon thuộc hệ thống SEAL
         </Text>
@@ -127,11 +117,8 @@ export default function CompetitionsScreen() {
               key={seg.key}
               style={[styles.segmentTab, isActive && { backgroundColor: colors.accent }]}
               onPress={() => setActiveSegment(seg.key as Segment)}
-              style={[styles.segmentTab, isActive && { backgroundColor: colors.accent }]}
-              onPress={() => setActiveSegment(seg.key as Segment)}
               activeOpacity={0.8}
             >
-              <Text style={[styles.segmentLabel, { color: isActive ? "#FFFFFF" : colors.textSecondary }]}>
               <Text style={[styles.segmentLabel, { color: isActive ? "#FFFFFF" : colors.textSecondary }]}>
                 {seg.label}
               </Text>
@@ -143,21 +130,31 @@ export default function CompetitionsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {loading ? (
           <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
-        ) : filteredEvents.length === 0 ? (
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {loading ? (
-          <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
+        ) : publicEventsError ? (
+          <View style={[styles.emptyContainer, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <Award size={32} color={colors.textSecondary} style={{ marginBottom: 12 }} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              Không tải được danh sách cuộc thi. Kiểm tra backend đang chạy và kết nối mạng.
+            </Text>
+            <Text style={[styles.emptyHint, { color: colors.textSecondary }]}>{publicEventsError}</Text>
+          </View>
         ) : filteredEvents.length === 0 ? (
           <View style={[styles.emptyContainer, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
             <Award size={32} color={colors.textSecondary} style={{ marginBottom: 12 }} />
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              Không có cuộc thi nào ở danh mục này.
+              {activeSegment === "open"
+                ? "Chưa có cuộc thi nào đang mở đăng ký."
+                : "Không có cuộc thi nào ở danh mục này."}
             </Text>
+            {activeSegment === "open" && publicEvents.length > 0 ? (
+              <Text style={[styles.emptyHint, { color: colors.textSecondary }]}>
+                Các cuộc thi hiện có thể đã hết hạn đăng ký — xem tab Đã kết thúc.
+              </Text>
+            ) : null}
           </View>
         ) : (
           filteredEvents.map((event) => (
             <View key={event.id} style={[styles.eventCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-              <View style={[styles.eventBanner, { backgroundColor: event.isActive ? "#2C1D11" : "#1F1E1E" }]}>
               <View style={[styles.eventBanner, { backgroundColor: event.isActive ? "#2C1D11" : "#1F1E1E" }]}>
                 <View style={styles.bannerRow}>
                   <View style={[styles.eventLogo, { backgroundColor: colors.accent }]}>
@@ -165,14 +162,7 @@ export default function CompetitionsScreen() {
                       {event.name.split(" ")[0][0]}
                       {event.name.split(" ")[1]?.[0] || ""}
                     </Text>
-                    <Text style={styles.eventLogoText}>
-                      {event.name.split(" ")[0][0]}
-                      {event.name.split(" ")[1]?.[0] || ""}
-                    </Text>
                   </View>
-                  <View style={[styles.statusBadge, { backgroundColor: event.isActive ? "rgba(16, 185, 129, 0.15)" : "rgba(255, 255, 255, 0.08)" }]}>
-                    <Text style={[styles.statusBadgeText, { color: event.isActive ? colors.success : colors.textSecondary }]}>
-                      {event.statusLabel}
                   <View style={[styles.statusBadge, { backgroundColor: event.isActive ? "rgba(16, 185, 129, 0.15)" : "rgba(255, 255, 255, 0.08)" }]}>
                     <Text style={[styles.statusBadgeText, { color: event.isActive ? colors.success : colors.textSecondary }]}>
                       {event.statusLabel}
@@ -210,9 +200,6 @@ export default function CompetitionsScreen() {
                   onPress={() =>
                     router.push({ pathname: "/event-detail", params: { id: String(event.id) } })
                   }
-                  onPress={() =>
-                    router.push({ pathname: "/event-detail", params: { id: String(event.id) } })
-                  }
                 >
                   <Text style={[styles.ctaBtnText, { color: colors.textPrimary }]}>Xem cuộc thi</Text>
                   <ArrowRight size={16} color={colors.textPrimary} />
@@ -237,10 +224,6 @@ export default function CompetitionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 },
-  headerTitle: { fontSize: 24, fontWeight: "800" },
-  headerSubtitle: { fontSize: 13, marginTop: 2 },
   container: { flex: 1 },
   header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 },
   headerTitle: { fontSize: 24, fontWeight: "800" },
@@ -270,23 +253,6 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: "rgba(255, 255, 255, 0.03)", width: "100%", marginVertical: 12 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
   metaText: { fontSize: 12 },
-  segmentTab: { flex: 1, height: 38, borderRadius: 20, justifyContent: "center", alignItems: "center" },
-  segmentLabel: { fontSize: 12, fontWeight: "700" },
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 110 },
-  eventCard: { borderRadius: 20, borderWidth: 1, overflow: "hidden", marginBottom: 20 },
-  eventBanner: { height: 70, justifyContent: "center", paddingHorizontal: 16 },
-  bannerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  eventLogo: { width: 38, height: 38, borderRadius: 10, justifyContent: "center", alignItems: "center" },
-  eventLogoText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  statusBadgeText: { fontSize: 9, fontWeight: "800" },
-  cardBody: { padding: 16 },
-  eventSeason: { fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.8 },
-  eventName: { fontSize: 18, fontWeight: "800", marginTop: 4, marginBottom: 6 },
-  eventTheme: { fontSize: 13, lineHeight: 18 },
-  divider: { height: 1, backgroundColor: "rgba(255, 255, 255, 0.03)", width: "100%", marginVertical: 12 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  metaText: { fontSize: 12 },
   teamBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -296,7 +262,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     alignSelf: "flex-start",
   },
-  teamBadgeText: { fontSize: 11 },
   teamBadgeText: { fontSize: 11 },
   ctaBtn: {
     flexDirection: "row",
@@ -324,5 +289,5 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   emptyText: { fontSize: 13, textAlign: "center" },
-  emptyText: { fontSize: 13, textAlign: "center" },
+  emptyHint: { fontSize: 12, textAlign: "center", marginTop: 8, lineHeight: 18 },
 });

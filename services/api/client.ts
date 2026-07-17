@@ -12,7 +12,6 @@ export class ApiError extends Error {
   }
 }
 
-<<<<<<< HEAD
 export function isUnauthorizedError(error: unknown): boolean {
   return error instanceof ApiError && error.statusCode === 401;
 }
@@ -39,8 +38,6 @@ export async function notifyUnauthorized() {
   await handleUnauthorized();
 }
 
-=======
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
   auth?: boolean;
@@ -70,17 +67,11 @@ export async function apiRequest<T>(
 
   if (auth) {
     const token = await getAccessToken();
-<<<<<<< HEAD
     if (!token) {
       await handleUnauthorized();
       throw new ApiError("Unauthorized", 401);
     }
     headers.Authorization = `Bearer ${token}`;
-=======
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -93,11 +84,7 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     if (response.status === 401 && auth) {
-<<<<<<< HEAD
       await handleUnauthorized();
-=======
-      await clearAccessToken();
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
     }
     const message =
       json && typeof json === "object" && "message" in json

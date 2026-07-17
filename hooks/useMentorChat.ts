@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MentorChatMessage } from "@/types/api";
 import { getMentorMessages } from "@/services/api/chat";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   joinMentorRoom,
   leaveMentorRoom,
@@ -29,6 +30,7 @@ export function useMentorChat({
   mentorId,
   enabled = true,
 }: UseMentorChatOptions) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [messages, setMessages] = useState<MentorChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -38,7 +40,10 @@ export function useMentorChat({
   const oldestCursorRef = useRef<number | null>(null);
 
   const loadInitial = useCallback(async () => {
-    if (!teamId || !mentorId || !enabled) return;
+    if (authLoading || !isAuthenticated || !teamId || !mentorId || !enabled) {
+      if (!authLoading && !isAuthenticated) setMessages([]);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -53,7 +58,7 @@ export function useMentorChat({
     } finally {
       setLoading(false);
     }
-  }, [teamId, mentorId, enabled]);
+  }, [authLoading, isAuthenticated, teamId, mentorId, enabled]);
 
   const loadMore = useCallback(async () => {
     if (
@@ -102,12 +107,12 @@ export function useMentorChat({
   );
 
   useEffect(() => {
-    if (!teamId || !mentorId || !enabled) {
+    if (!teamId || !mentorId || !enabled || authLoading || !isAuthenticated) {
       setMessages([]);
       return;
     }
 
-    loadInitial();
+    void loadInitial().catch(() => undefined);
 
     let active = true;
     let cleanupListeners: (() => void) | undefined;
@@ -160,7 +165,7 @@ export function useMentorChat({
         leaveMentorRoom(teamId, mentorId).catch(() => undefined);
       }
     };
-  }, [teamId, mentorId, enabled, loadInitial]);
+  }, [teamId, mentorId, enabled, authLoading, isAuthenticated, loadInitial]);
 
   return {
     messages,

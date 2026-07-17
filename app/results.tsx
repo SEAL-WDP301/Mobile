@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   StatusBar,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -16,17 +17,26 @@ import { useEventContext } from "@/contexts/EventContext";
 import { useTeamStatus } from "@/hooks/useTeamStatus";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { getMentorFeedback } from "@/services/api/teams";
-import type { MentorFeedback } from "@/types/api";
+import { updateFeedbackStatus } from "@/services/api/submissions";
+import { ApiError } from "@/services/api/client";
+import type { FeedbackStatus, MentorFeedback } from "@/types/api";
 import { formatDateTime } from "@/utils/format";
+
+const STATUS_OPTIONS: { value: FeedbackStatus; label: string }[] = [
+  { value: "unread", label: "Chưa đọc" },
+  { value: "acknowledged", label: "Đã xem" },
+  { value: "completed", label: "Hoàn thành" },
+];
 
 export default function ResultsScreen() {
   const { isDark } = useTheme();
   const { selectedEventId } = useEventContext();
   const { data: teamStatus } = useTeamStatus(selectedEventId);
-  const { data: workspace } = useWorkspace(selectedEventId);
+  const { data: workspace, refresh: refreshWorkspace } = useWorkspace(selectedEventId);
 
   const [feedbacks, setFeedbacks] = useState<MentorFeedback[]>([]);
   const [loading, setLoading] = useState(false);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const team = teamStatus?.teamInfo?.team;
   const teamName = team?.name ?? "Đội của bạn";
@@ -35,14 +45,37 @@ export default function ResultsScreen() {
       (entry) => entry.teamRound?.score != null,
     ) ?? [];
 
-  useEffect(() => {
+  const loadFeedbacks = useCallback(async () => {
     if (!selectedEventId) return;
     setLoading(true);
-    getMentorFeedback(selectedEventId)
-      .then(setFeedbacks)
-      .catch(() => setFeedbacks([]))
-      .finally(() => setLoading(false));
-  }, [selectedEventId]);
+    try {
+      const data = await getMentorFeedback(selectedEventId);
+      setFeedbacks(data);
+    } catch {
+      setFeedbacks(workspace?.mentorFeedbacks ?? []);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedEventId, workspace?.mentorFeedbacks]);
+
+  useEffect(() => {
+    loadFeedbacks();
+  }, [loadFeedbacks]);
+
+  const handleStatusChange = async (feedbackId: number, status: FeedbackStatus) => {
+    try {
+      setUpdatingId(feedbackId);
+      await updateFeedbackStatus(feedbackId, status);
+      await loadFeedbacks();
+      await refreshWorkspace();
+    } catch (error) {
+      const message =
+        error instanceof ApiError ? error.message : "Không cập nhật được trạng thái.";
+      Alert.alert("Lỗi", message);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -79,7 +112,7 @@ export default function ResultsScreen() {
         <View style={[styles.researchBox, { backgroundColor: `${colors.info}10`, borderColor: `${colors.info}30` }]}>
           <Info size={16} color={colors.info} style={{ marginRight: 10, marginTop: 2 }} />
           <Text style={[styles.researchText, { color: colors.info }]}>
-            Điểm vòng thi và nhận xét mentor được lấy trực tiếp từ hệ thống SEAL.
+            Điểm chỉ hiển thị khi backend publish kết quả. Nhận xét mentor có thể cập nhật trạng thái xử lý.
           </Text>
         </View>
 
@@ -153,6 +186,35 @@ export default function ResultsScreen() {
                     {fb.content}
                   </Text>
                 </View>
+                <View style={styles.statusRow}>
+                  {STATUS_OPTIONS.map((opt) => {
+                    const active = fb.status === opt.value;
+                    return (
+                      <TouchableOpacity
+                        key={opt.value}
+                        style={[
+                          styles.statusChip,
+                          {
+                            borderColor: active ? colors.accent : colors.border,
+                            backgroundColor: active ? `${colors.accent}15` : colors.cardElevated,
+                          },
+                        ]}
+                        disabled={updatingId === fb.id}
+                        onPress={() => handleStatusChange(fb.id, opt.value)}
+                      >
+                        <Text
+                          style={{
+                            color: active ? colors.accent : colors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: "700",
+                          }}
+                        >
+                          {opt.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
             ))}
           </View>
@@ -210,4 +272,6 @@ const styles = StyleSheet.create({
   roundLabel: { fontSize: 11, fontWeight: "700", marginBottom: 8 },
   commentBox: { borderRadius: 12, padding: 10, flexDirection: "row", alignItems: "flex-start" },
   commentBodyText: { fontSize: 12, lineHeight: 17, flex: 1 },
+  statusRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
+  statusChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
 });

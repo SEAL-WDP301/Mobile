@@ -13,7 +13,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import {
   Bell,
-  ChevronDown,
   Clock,
   CheckCircle,
   AlertCircle,
@@ -34,22 +33,13 @@ import { useEventContext, useSelectedEvent } from "@/contexts/EventContext";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useTeamStatus } from "@/hooks/useTeamStatus";
 import { useNotifications } from "@/hooks/useNotifications";
+import RoundTimeline from "@/components/student/RoundTimeline";
+import { mapTeamStatusLabel } from "@/utils/eventRegistration";
 import {
-<<<<<<< HEAD
   computeDeadlineProgress,
   computeTimeLeft,
   formatDateTime,
   formatRelativeTime,
-=======
-  TIMELINE_ACTIVITIES,
-  ANNOUNCEMENTS,
-  MOCK_MENTOR,
-} from "@/constants/mockData";
-import {
-  computeDeadlineProgress,
-  computeTimeLeft,
-  formatDateTime,
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   getInitials,
   mapRoundStatusLabel,
   mapTeamRoleLabel,
@@ -64,11 +54,7 @@ export default function HomeScreen() {
   const selectedEvent = useSelectedEvent();
   const { data: workspace } = useWorkspace(selectedEventId);
   const { data: teamStatus } = useTeamStatus(selectedEventId);
-<<<<<<< HEAD
   const { unreadCount, items: notificationItems } = useNotifications();
-=======
-  const { unreadCount } = useNotifications();
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   const activeEntry = workspace?.roundSubmissions?.find(
     (r) => r.round.id === workspace.currentActiveRound?.id,
@@ -82,11 +68,7 @@ export default function HomeScreen() {
 
   const displayName = user?.name ?? "Bạn";
   const roleLabel = workspace?.role ? mapTeamRoleLabel(workspace.role) : "Sinh viên";
-<<<<<<< HEAD
   const eventName = selectedEvent?.event.name ?? myEvents[0]?.event.name ?? "Cuộc thi";
-=======
-  const eventName = selectedEvent?.event.name ?? myEvents[0]?.event.name ?? "SEAL";
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   const teamName = team?.name ?? selectedEvent?.teamName ?? "—";
   const trackName = team?.track?.name ?? "—";
   const teamInitials = getInitials(teamName);
@@ -112,11 +94,7 @@ export default function HomeScreen() {
     border: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
   };
 
-<<<<<<< HEAD
   const recentNotifications = notificationItems.slice(0, 3);
-=======
-  const nextActivity = TIMELINE_ACTIVITIES.find((a) => a.status === "upcoming") || TIMELINE_ACTIVITIES[0];
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
@@ -131,14 +109,11 @@ export default function HomeScreen() {
           <View style={[styles.logoWrapper, { backgroundColor: colors.accent }]}>
             <Text style={styles.logoText}>S</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.eventSelector} 
-            activeOpacity={0.7}
-            onPress={() => router.push("/event-detail")}
-          >
-            <Text style={[styles.eventName, { color: colors.textPrimary }]}>{eventName}</Text>
-            <ChevronDown size={14} color={colors.textSecondary} style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
+          <View style={styles.eventSelector}>
+            <Text style={[styles.eventName, { color: colors.textPrimary }]} numberOfLines={1}>
+              {eventName}
+            </Text>
+          </View>
         </View>
 
         <TouchableOpacity 
@@ -254,17 +229,7 @@ export default function HomeScreen() {
             Lịch trình sự kiện sẽ hiển thị khi BTC cập nhật trên hệ thống.
           </Text>
 
-<<<<<<< HEAD
           <TouchableOpacity
-=======
-          {nextActivity.type === "Mentoring" && (
-            <Text style={[styles.activityMentorInfo, { color: colors.textSecondary }]}>
-              Người hướng dẫn: <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>{nextActivity.mentorName || mentor?.name || MOCK_MENTOR.name}</Text>
-            </Text>
-          )}
-
-          <TouchableOpacity 
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
             style={[styles.activityActionBtn, { backgroundColor: colors.cardElevated }]}
             activeOpacity={0.8}
             onPress={() => router.push("/(tabs)/schedule")}
@@ -280,47 +245,20 @@ export default function HomeScreen() {
         <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 24, marginBottom: 12 }]}>
           TIẾN TRÌNH CUỘC THI
         </Text>
-        <View style={[styles.progressCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          {[
-            { label: "Đăng ký", status: "completed" },
-            { label: "Thành lập đội", status: "completed" },
-            { label: "Round 1: Prototype", status: "current" },
-            { label: "Round 2: Final", status: "locked" },
-            { label: "Kết quả chung cuộc", status: "locked" },
-          ].map((step, idx) => (
-            <View key={idx} style={styles.progressStepRow}>
-              <View style={styles.stepIndicatorCol}>
-                <View style={[
-                  styles.stepDot,
-                  step.status === "completed" && { backgroundColor: colors.success },
-                  step.status === "current" && { backgroundColor: colors.accent, borderWidth: 2, borderColor: colors.bg },
-                  step.status === "locked" && { backgroundColor: isDark ? "#2A2826" : "#E5E7EB" }
-                ]}>
-                  {step.status === "completed" && <CheckCircle2 size={12} color="#FFFFFF" />}
-                </View>
-                {idx !== 4 && <View style={[
-                  styles.stepLine,
-                  { backgroundColor: step.status === "completed" ? colors.success : (isDark ? "#2A2826" : "#E5E7EB") }
-                ]} />}
-              </View>
-              <View style={styles.stepContentCol}>
-                <Text style={[
-                  styles.stepLabel, 
-                  { color: colors.textPrimary },
-                  step.status === "current" && { color: colors.accent, fontWeight: "700" },
-                  step.status === "locked" && { color: colors.textSecondary }
-                ]}>
-                  {step.label}
-                </Text>
-                <Text style={[styles.stepStatusText, { color: colors.textSecondary }]}>
-                  {step.status === "completed" && "Đã hoàn thành"}
-                  {step.status === "current" && "Đang diễn ra"}
-                  {step.status === "locked" && "Đang khóa"}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
+        {workspace?.roundSubmissions?.length ? (
+          <RoundTimeline
+            entries={workspace.roundSubmissions}
+            currentActiveRoundId={workspace.currentActiveRound?.id}
+            onSelectRound={(roundId) => router.push(`/round-detail?roundId=${roundId}`)}
+            colors={{ ...colors, isDark }}
+          />
+        ) : (
+          <View style={[styles.progressCard, { backgroundColor: colors.cardBg, borderColor: colors.border, padding: 20 }]}>
+            <Text style={[styles.stepStatusText, { color: colors.textSecondary, textAlign: "center" }]}>
+              Tiến trình vòng thi sẽ hiển thị khi đội được duyệt và có workspace.
+            </Text>
+          </View>
+        )}
 
         {/* ================= TEAM STATUS CARD ================= */}
         <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 24, marginBottom: 12 }]}>
@@ -344,18 +282,16 @@ export default function HomeScreen() {
             </View>
             <View style={styles.teamStatItem}>
               <Text style={[styles.teamStatLabel, { color: colors.textSecondary }]}>Trạng thái</Text>
-              <Text style={[styles.teamStatValue, { color: colors.success }]}>Đủ điều kiện</Text>
+              <Text style={[styles.teamStatValue, { color: colors.success }]}>
+                {mapTeamStatusLabel(team?.status)}
+              </Text>
             </View>
           </View>
 
           <View style={styles.mentorBriefRow}>
             <Text style={[styles.mentorBriefLabel, { color: colors.textSecondary }]}>Mentor:</Text>
             <Text style={[styles.mentorBriefValue, { color: colors.textPrimary }]}>
-<<<<<<< HEAD
               {mentor?.name ?? "Chưa phân công"}
-=======
-              {mentor?.name ?? MOCK_MENTOR.name}
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
             </Text>
           </View>
 
@@ -413,26 +349,6 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )))}
         </View>
-
-        {/* ================= PARTICIPANT PASS SHORTCUT ================= */}
-        <TouchableOpacity 
-          style={[styles.passCard, { backgroundColor: colors.cardElevated, borderColor: colors.border }]}
-          activeOpacity={0.9}
-          onPress={() => router.push("/participant-pass")}
-        >
-          <View style={styles.passLeft}>
-            <QrCode size={24} color={colors.accent} style={{ marginRight: 12 }} />
-            <View>
-              <Text style={[styles.passTitle, { color: colors.textPrimary }]}>THẺ THAM GIA CUỘC THI</Text>
-              <Text style={[styles.passSubtitle, { color: colors.textSecondary }]}>
-                MSSV: {user?.studentProfile?.studentCode ?? "—"} · {teamName}
-              </Text>
-            </View>
-          </View>
-          <View style={[styles.passButton, { backgroundColor: colors.accent }]}>
-            <Text style={styles.passButtonText}>QUÉT MÃ</Text>
-          </View>
-        </TouchableOpacity>
 
       </ScrollView>
     </SafeAreaView>

@@ -44,6 +44,20 @@ export interface SignInResponse {
   user: AuthUser;
 }
 
+export interface EventFaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface EventContactItem {
+  label?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  detail?: string;
+  responseTime?: string;
+}
+
 export interface PublicEvent {
   id: number;
   name: string;
@@ -53,6 +67,8 @@ export interface PublicEvent {
   status: string;
   registrationDeadline?: string | null;
   startDate?: string | null;
+  faq?: EventFaqItem[] | string | null;
+  contact?: EventContactItem[] | string | null;
   tracks?: Track[];
   rounds?: Round[];
 }
@@ -61,7 +77,6 @@ export interface Track {
   id: number;
   name: string;
   description?: string | null;
-<<<<<<< HEAD
   maxMembersPerTeam?: number | null;
 }
 
@@ -92,8 +107,6 @@ export interface RegisteredTeam {
   status: string;
   eventId: number;
   trackId: number;
-=======
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 }
 
 export interface Round {
@@ -103,6 +116,10 @@ export interface Round {
   status: string;
   submissionType?: string;
   submissionDeadline?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  maxFileSizeMb?: number | null;
+  isTrackSpecific?: boolean;
 }
 
 export interface MyEventEntry {
@@ -125,6 +142,7 @@ export interface TeamMemberUser {
 }
 
 export interface TeamMemberEntry {
+  userId?: number;
   role: string;
   status: string;
   user: TeamMemberUser;
@@ -144,21 +162,14 @@ export interface TeamInfo {
   id: number;
   name: string;
   status: string;
-<<<<<<< HEAD
   githubRepoUrl?: string | null;
-=======
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   track?: Track;
   members?: TeamMemberEntry[];
   mentorAssignments?: MentorAssignment[];
 }
 
 export interface RegistrationStatus {
-<<<<<<< HEAD
   individualRegistration?: StudentRegistration | null;
-=======
-  individualRegistration?: unknown;
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   teamInfo?: {
     role: string;
     status: string;
@@ -194,10 +205,12 @@ export interface WorkspaceOverview {
   mentorFeedbacks?: MentorFeedback[];
 }
 
+export type FeedbackStatus = "unread" | "acknowledged" | "completed";
+
 export interface MentorFeedback {
   id: number;
   content: string;
-  status: string;
+  status: FeedbackStatus;
   createdAt: string;
   mentor?: {
     id: number;

@@ -21,6 +21,7 @@ import { useTeamStatus } from "@/hooks/useTeamStatus";
 import { getPublicEventById } from "@/services/api/events";
 import { registerIndividual, registerTeam } from "@/services/api/teams";
 import { ApiError } from "@/services/api/client";
+import { isEventRegistrationOpen } from "@/utils/eventRegistration";
 import type { PublicEvent, Track } from "@/types/api";
 
 type RegisterMode = "individual" | "team";
@@ -90,11 +91,13 @@ export default function EventRegisterScreen() {
     if (savedSkills) setSkills(savedSkills);
   }, [teamStatus?.individualRegistration?.skills]);
 
+  const registrationOpen = event ? isEventRegistrationOpen(event) : false;
+
   const canRegister = useMemo(() => {
-    if (!eventId || !trackId || hasTeam) return false;
+    if (!eventId || !trackId || hasTeam || !registrationOpen) return false;
     if (mode === "individual") return true;
     return teamName.trim().length >= 2;
-  }, [eventId, trackId, hasTeam, mode, teamName]);
+  }, [eventId, trackId, hasTeam, mode, teamName, registrationOpen]);
 
   const handleSubmit = async () => {
     if (!canRegister || submitting || !eventId || !trackId) return;
@@ -224,6 +227,12 @@ export default function EventRegisterScreen() {
             <View style={[styles.noticeBox, { backgroundColor: `${colors.accent}12`, borderColor: `${colors.accent}40` }]}>
               <Text style={[styles.noticeText, { color: colors.accent }]}>
                 Bạn đã có đội trong cuộc thi này: {teamStatus?.teamInfo?.team.name}
+              </Text>
+            </View>
+          ) : !registrationOpen ? (
+            <View style={[styles.noticeBox, { backgroundColor: `${colors.accent}12`, borderColor: `${colors.accent}40` }]}>
+              <Text style={[styles.noticeText, { color: colors.accent }]}>
+                Đăng ký đã đóng hoặc sự kiện không còn trong giai đoạn active.
               </Text>
             </View>
           ) : (

@@ -4,21 +4,13 @@ import { getWorkspaceOverview } from "@/services/api/teams";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function useWorkspace(eventId: number | null) {
-<<<<<<< HEAD
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-=======
-  const { isAuthenticated } = useAuth();
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   const [data, setData] = useState<WorkspaceOverview | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-<<<<<<< HEAD
     if (authLoading || !isAuthenticated || !eventId) {
-=======
-    if (!isAuthenticated || !eventId) {
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
       setData(null);
       return;
     }
@@ -33,17 +25,10 @@ export function useWorkspace(eventId: number | null) {
     } finally {
       setLoading(false);
     }
-<<<<<<< HEAD
   }, [authLoading, isAuthenticated, eventId]);
 
   useEffect(() => {
     void refresh().catch(() => undefined);
-=======
-  }, [isAuthenticated, eventId]);
-
-  useEffect(() => {
-    refresh();
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   }, [refresh]);
 
   return { data, loading, error, refresh };

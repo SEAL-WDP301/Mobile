@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  Dimensions,
   Switch,
   Alert
 } from "react-native";
@@ -14,17 +13,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import {
   User,
-  Settings,
   HelpCircle,
   LogOut,
   ChevronRight,
   Sun,
   Moon,
-  QrCode,
-  Briefcase,
   Award,
   ShieldAlert,
-  Globe,
   Bell,
   Lock,
   Edit2
@@ -32,32 +27,18 @@ import {
 import { useTheme } from "@/constants/theme/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocale } from "@/contexts/LocaleContext";
-<<<<<<< HEAD
-import { useSelectedEvent } from "@/contexts/EventContext";
-=======
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 import {
   computeProfileCompletion,
   getInitials,
 } from "@/utils/format";
-<<<<<<< HEAD
 import {
-  formatParticipantPassId,
   formatSupportContact,
 } from "@/constants/config";
-=======
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
-
-const { width } = Dimensions.get("window");
 
 export default function ProfileScreen() {
   const { isDark, toggle } = useTheme();
   const { user, logout } = useAuth();
-  const { t, localeLabel } = useLocale();
-<<<<<<< HEAD
-  const selectedEvent = useSelectedEvent();
-=======
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
+  const { t } = useLocale();
 
   const displayName = user?.name ?? "—";
   const displayEmail = user?.email ?? "—";
@@ -65,12 +46,6 @@ export default function ProfileScreen() {
   const university = user?.studentProfile?.universityName ?? "Chưa cập nhật";
   const avatarInitials = getInitials(displayName);
   const profileCompletion = user ? computeProfileCompletion(user) : 0;
-<<<<<<< HEAD
-  const passBadge = selectedEvent
-    ? formatParticipantPassId(selectedEvent.event.year, selectedEvent.teamId)
-    : null;
-=======
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -148,25 +123,13 @@ export default function ProfileScreen() {
         <Text style={[styles.groupTitle, { color: colors.textSecondary }]}>HỒ SƠ CÁ NHÂN</Text>
         <View style={[styles.groupBlock, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
           <TouchableOpacity
-            style={[styles.rowItem, { borderBottomColor: colors.border }]}
+            style={styles.rowItem}
             activeOpacity={0.7}
             onPress={() => router.push("/profile/personal-info")}
           >
             <View style={styles.rowLeft}>
               <User size={16} color={colors.accent} style={{ marginRight: 12 }} />
               <Text style={[styles.rowText, { color: colors.textPrimary }]}>{t.profile.personalInfo}</Text>
-            </View>
-            <ChevronRight size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.rowItem}
-            activeOpacity={0.7}
-            onPress={() => router.push("/profile/portfolio-links")}
-          >
-            <View style={styles.rowLeft}>
-              <Briefcase size={16} color={colors.accent} style={{ marginRight: 12 }} />
-              <Text style={[styles.rowText, { color: colors.textPrimary }]}>{t.profile.portfolio}</Text>
             </View>
             <ChevronRight size={16} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -188,44 +151,15 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.rowItem, { borderBottomColor: colors.border }]} 
+            style={styles.rowItem} 
             activeOpacity={0.7}
             onPress={() => router.push("/results")}
           >
             <View style={styles.rowLeft}>
               <ShieldAlert size={16} color={colors.accent} style={{ marginRight: 12 }} />
-              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Nhận xét của Giám khảo (Feedback)</Text>
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Nhận xét mentor & điểm vòng</Text>
             </View>
             <ChevronRight size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.rowItem} activeOpacity={0.7}>
-            <View style={styles.rowLeft}>
-              <Award size={16} color={colors.accent} style={{ marginRight: 12 }} />
-              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Chứng nhận & Lịch sử check-in</Text>
-            </View>
-            <ChevronRight size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* ================= GROUP: PARTICIPANT PASS ================= */}
-        <Text style={[styles.groupTitle, { color: colors.textSecondary }]}>THẺ ĐỒNG HÀNH (PASS)</Text>
-        <View style={[styles.groupBlock, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <TouchableOpacity 
-            style={styles.rowItem} 
-            activeOpacity={0.7}
-            onPress={() => router.push("/participant-pass")}
-          >
-            <View style={styles.rowLeft}>
-              <QrCode size={16} color={colors.accent} style={{ marginRight: 12 }} />
-              <Text style={[styles.rowText, { color: colors.textPrimary }]}>Mở QR Participant Pass</Text>
-            </View>
-            <View style={styles.rowRight}>
-              {passBadge ? (
-                <Text style={[styles.badgeTextText, { color: colors.textSecondary }]}>{passBadge}</Text>
-              ) : null}
-              <ChevronRight size={16} color={colors.textSecondary} style={{ marginLeft: 6 }} />
-            </View>
           </TouchableOpacity>
         </View>
 
@@ -249,7 +183,11 @@ export default function ProfileScreen() {
             />
           </View>
 
-          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.rowItem, { borderBottomColor: colors.border }]}
+            activeOpacity={0.7}
+            onPress={() => router.push("/profile/notification-settings")}
+          >
             <View style={styles.rowLeft}>
               <Bell size={16} color={colors.accent} style={{ marginRight: 12 }} />
               <Text style={[styles.rowText, { color: colors.textPrimary }]}>Cài đặt thông báo (Push & Email)</Text>
@@ -258,21 +196,10 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.rowItem, { borderBottomColor: colors.border }]}
+            style={styles.rowItem}
             activeOpacity={0.7}
-            onPress={() => router.push("/profile/language")}
+            onPress={() => router.push("/profile/privacy-device")}
           >
-            <View style={styles.rowLeft}>
-              <Globe size={16} color={colors.accent} style={{ marginRight: 12 }} />
-              <Text style={[styles.rowText, { color: colors.textPrimary }]}>{t.profile.language}</Text>
-            </View>
-            <View style={styles.rowRight}>
-              <Text style={[styles.badgeTextText, { color: colors.textSecondary }]}>{localeLabel}</Text>
-              <ChevronRight size={16} color={colors.textSecondary} style={{ marginLeft: 6 }} />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
             <View style={styles.rowLeft}>
               <Lock size={16} color={colors.accent} style={{ marginRight: 12 }} />
               <Text style={[styles.rowText, { color: colors.textPrimary }]}>Quyền riêng tư & Thiết bị</Text>
@@ -284,7 +211,11 @@ export default function ProfileScreen() {
         {/* ================= GROUP: HỖ TRỢ ================= */}
         <Text style={[styles.groupTitle, { color: colors.textSecondary }]}>HỖ TRỢ & LIÊN HỆ</Text>
         <View style={[styles.groupBlock, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.rowItem, { borderBottomColor: colors.border }]}
+            activeOpacity={0.7}
+            onPress={() => router.push("/profile/faq")}
+          >
             <View style={styles.rowLeft}>
               <HelpCircle size={16} color={colors.accent} style={{ marginRight: 12 }} />
               <Text style={[styles.rowText, { color: colors.textPrimary }]}>Câu hỏi thường gặp (FAQ)</Text>
@@ -292,7 +223,11 @@ export default function ProfileScreen() {
             <ChevronRight size={16} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.rowItem, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.rowItem, { borderBottomColor: colors.border }]}
+            activeOpacity={0.7}
+            onPress={() => router.push("/profile/report")}
+          >
             <View style={styles.rowLeft}>
               <Edit2 size={16} color={colors.accent} style={{ marginRight: 12 }} />
               <Text style={[styles.rowText, { color: colors.textPrimary }]}>Báo cáo sự cố hoặc ý kiến đóng góp</Text>

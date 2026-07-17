@@ -19,7 +19,6 @@ interface LocaleContextType {
   locale: Locale;
   t: TranslationKeys;
   setLocale: (locale: Locale) => Promise<void>;
-  localeLabel: string;
 }
 
 const LocaleContext = createContext<LocaleContextType>({} as LocaleContextType);
@@ -45,10 +44,6 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       locale,
       t: translations[locale],
       setLocale,
-      localeLabel:
-        locale === "vi"
-          ? translations.vi.profile.languageVi
-          : translations.en.profile.languageEn,
     }),
     [locale, setLocale],
   );

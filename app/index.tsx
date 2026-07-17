@@ -1,10 +1,5 @@
 import { ActivityIndicator, View } from "react-native";
 import { Redirect } from "expo-router";
-<<<<<<< HEAD
-=======
-import { ActivityIndicator, View } from "react-native";
-
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Index() {

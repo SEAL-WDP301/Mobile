@@ -23,11 +23,7 @@ export default function AuthCallbackScreen() {
       }
     };
 
-<<<<<<< HEAD
     void run().catch(() => router.replace("/auth/login"));
-=======
-    run();
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   }, [token, loginWithAccessToken]);
 
   return (

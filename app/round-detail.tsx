@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useMemo, useState } from "react";
-=======
-import React, { useMemo } from "react";
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 import {
   View,
   Text,
@@ -12,26 +8,19 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
-<<<<<<< HEAD
   TextInput,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { ChevronLeft, Clock, CheckCircle, AlertTriangle } from "lucide-react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import * as DocumentPicker from "expo-document-picker";
+import { ChevronLeft, Clock, CheckCircle, AlertTriangle, Upload, FileText } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
 import { useEventContext } from "@/contexts/EventContext";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { submitProject } from "@/services/api/submissions";
 import { ApiError } from "@/services/api/client";
-=======
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { ChevronLeft, Clock, CheckCircle, AlertTriangle, ExternalLink } from "lucide-react-native";
-import { useTheme } from "@/constants/theme/useTheme";
-import { useEventContext } from "@/contexts/EventContext";
-import { useWorkspace } from "@/hooks/useWorkspace";
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
+import RoundTimeline from "@/components/student/RoundTimeline";
 import {
   computeDeadlineProgress,
   computeTimeLeft,
@@ -41,35 +30,49 @@ import {
 
 export default function RoundDetailScreen() {
   const { isDark } = useTheme();
+  const { roundId: roundIdParam } = useLocalSearchParams<{ roundId?: string }>();
+  const parsedRoundId = roundIdParam ? parseInt(roundIdParam, 10) : null;
+
   const { selectedEventId } = useEventContext();
-<<<<<<< HEAD
   const { data: workspace, loading, refresh } = useWorkspace(selectedEventId);
 
+  const [selectedRoundId, setSelectedRoundId] = useState<number | null>(parsedRoundId);
   const [githubUrl, setGithubUrl] = useState("");
   const [description, setDescription] = useState("");
+  const [pickedFile, setPickedFile] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+    size?: number;
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false);
-=======
-  const { data: workspace, loading } = useWorkspace(selectedEventId);
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
 
   const activeEntry = useMemo(() => {
     if (!workspace) return null;
-    const activeRoundId = workspace.currentActiveRound?.id;
+    const targetId = selectedRoundId ?? parsedRoundId ?? workspace.currentActiveRound?.id;
+    if (targetId) {
+      const found = workspace.roundSubmissions.find((r) => r.round.id === targetId);
+      if (found) return found;
+    }
     return (
-      workspace.roundSubmissions.find((r) => r.round.id === activeRoundId) ??
+      workspace.roundSubmissions.find((r) => r.round.id === workspace.currentActiveRound?.id) ??
       workspace.roundSubmissions.find((r) => r.canSubmit) ??
       workspace.roundSubmissions[0] ??
       null
     );
-  }, [workspace]);
+  }, [workspace, selectedRoundId, parsedRoundId]);
 
   const round = activeEntry?.round;
   const submission = activeEntry?.submission;
   const hasSubmitted = !!submission;
-<<<<<<< HEAD
-  const canSubmit = !!activeEntry?.canSubmit && !!selectedEventId;
-=======
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
+  const isLeader = workspace?.role === "leader";
+  const teamApproved = workspace?.team?.status === "approved";
+  const canSubmit =
+    !!activeEntry?.canSubmit &&
+    !!selectedEventId &&
+    isLeader &&
+    teamApproved;
+  const isReadOnly = !activeEntry?.canSubmit;
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -81,17 +84,42 @@ export default function RoundDetailScreen() {
     border: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
     success: "#10B981",
     warning: "#F59E0B",
+    isDark,
   };
 
-<<<<<<< HEAD
+  const handlePickFile = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    const maxMb = round?.maxFileSizeMb ?? 50;
+    if (asset.size && asset.size > maxMb * 1024 * 1024) {
+      Alert.alert("Lỗi", `File vượt quá ${maxMb}MB.`);
+      return;
+    }
+    setPickedFile({
+      uri: asset.uri,
+      name: asset.name,
+      type: asset.mimeType ?? "application/octet-stream",
+      size: asset.size,
+    });
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit || !selectedEventId || !round) return;
 
+    const submissionType = round.submissionType ?? "github_link";
     const repoUrl = workspace?.team?.githubRepoUrl;
     const url = githubUrl.trim() || repoUrl || "";
 
-    if (!url && round.submissionType === "github_link") {
+    if (submissionType === "github_link" && !url) {
       Alert.alert("Lỗi", "Vui lòng nhập link GitHub hoặc đợi BTC gán repo cho đội.");
+      return;
+    }
+    if (submissionType === "file" && !pickedFile && !submission?.fileUrl) {
+      Alert.alert("Lỗi", "Vui lòng chọn file để nộp.");
       return;
     }
 
@@ -100,9 +128,11 @@ export default function RoundDetailScreen() {
       await submitProject({
         eventId: selectedEventId,
         roundId: round.id,
-        githubUrl: url || undefined,
+        githubUrl: submissionType === "github_link" ? url : undefined,
         description: description.trim() || undefined,
+        file: submissionType === "file" && pickedFile ? pickedFile : undefined,
       });
+      setPickedFile(null);
       await refresh();
       Alert.alert("Thành công", "Đã nộp bài thành công.");
     } catch (error) {
@@ -112,14 +142,6 @@ export default function RoundDetailScreen() {
     } finally {
       setSubmitting(false);
     }
-=======
-  const handleOpenWeb = () => {
-    Alert.alert(
-      "Mở cổng nộp bài",
-      "Vui lòng sử dụng SEAL Web để nộp hoặc cập nhật bài làm.",
-      [{ text: "OK", style: "cancel" }],
-    );
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
   };
 
   if (loading) {
@@ -130,18 +152,18 @@ export default function RoundDetailScreen() {
     );
   }
 
-  if (!round) {
+  if (!workspace || !round) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top", "bottom"]}>
         <View style={[styles.appHeader, { borderBottomColor: colors.border }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <ChevronLeft size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Chi tiết vòng thi</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Workspace</Text>
           <View style={{ width: 24 }} />
         </View>
         <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-          Không có vòng thi đang hoạt động.
+          Chưa có workspace. Đội cần được duyệt để truy cập.
         </Text>
       </SafeAreaView>
     );
@@ -158,13 +180,32 @@ export default function RoundDetailScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ChevronLeft size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Chi tiết vòng thi</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Workspace</Text>
         <View style={{ width: 24 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.roundHero, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <Text style={[styles.cardTag, { color: colors.accent }]}>VÒNG THI HIỆN TẠI</Text>
+        <View style={[styles.teamBanner, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <Text style={[styles.teamName, { color: colors.textPrimary }]}>{workspace.team.name}</Text>
+          <Text style={[styles.teamMeta, { color: colors.textSecondary }]}>
+            Vai trò: {workspace.role} · Trạng thái: {workspace.team.status}
+          </Text>
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>CÁC VÒNG THI</Text>
+        <RoundTimeline
+          entries={workspace.roundSubmissions}
+          currentActiveRoundId={workspace.currentActiveRound?.id}
+          selectedRoundId={round.id}
+          onSelectRound={(id) => setSelectedRoundId(id)}
+          colors={{ ...colors, success: colors.success }}
+        />
+
+        <View style={[styles.roundHero, { backgroundColor: colors.cardBg, borderColor: colors.border, marginTop: 16 }]}>
+          <Text style={[styles.cardTag, { color: colors.accent }]}>
+            VÒNG {round.roundNumber}
+            {round.id === workspace.currentActiveRound?.id ? " · HIỆN TẠI" : ""}
+          </Text>
           <Text style={[styles.roundName, { color: colors.textPrimary }]}>{round.name}</Text>
           <View style={styles.timeRow}>
             <Clock size={16} color={colors.warning} />
@@ -172,6 +213,7 @@ export default function RoundDetailScreen() {
           </View>
           <Text style={[styles.statusText, { color: colors.textSecondary }]}>
             {mapRoundStatusLabel(round.status)}
+            {isReadOnly ? " · Chỉ xem" : ""}
           </Text>
           <View style={[styles.progressBar, { backgroundColor: isDark ? "#2A2826" : "#E5E7EB", marginTop: 12 }]}>
             <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: colors.accent }]} />
@@ -190,11 +232,7 @@ export default function RoundDetailScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.alertTitle, { color: colors.success }]}>Đã ghi nhận bài nộp</Text>
                   <Text style={[styles.alertBody, { color: colors.textSecondary }]}>
-<<<<<<< HEAD
-                    Nộp lúc {formatDateTime(submission?.submittedAt)}. Bạn có thể cập nhật lại trước hạn.
-=======
-                    Nộp lúc {formatDateTime(submission?.submittedAt)}. Cập nhật bài trên Web trước hạn.
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
+                    Nộp lúc {formatDateTime(submission?.submittedAt)} · {submission?.status}
                   </Text>
                 </View>
               </View>
@@ -209,53 +247,89 @@ export default function RoundDetailScreen() {
                 {submission?.githubUrl ? (
                   <>
                     <Text style={[styles.detailLabel, { color: colors.textSecondary, marginTop: 10 }]}>GitHub:</Text>
-                    <Text style={[styles.detailValue, { color: colors.accent }]} numberOfLines={2}>
-                      {submission.githubUrl}
-                    </Text>
+                    <TouchableOpacity onPress={() => Linking.openURL(submission.githubUrl!)}>
+                      <Text style={[styles.detailValue, { color: colors.accent }]} numberOfLines={2}>
+                        {submission.githubUrl}
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                ) : null}
+                {submission?.fileUrl ? (
+                  <>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary, marginTop: 10 }]}>File:</Text>
+                    <TouchableOpacity onPress={() => Linking.openURL(submission.fileUrl!)}>
+                      <Text style={[styles.detailValue, { color: colors.accent }]} numberOfLines={2}>
+                        {submission.fileUrl}
+                      </Text>
+                    </TouchableOpacity>
                   </>
                 ) : null}
               </View>
             </View>
           ) : (
-            <View style={styles.notSubmittedContainer}>
-              <View style={[styles.alertBanner, { backgroundColor: `${colors.warning}10`, borderColor: `${colors.warning}30` }]}>
-                <AlertTriangle size={18} color={colors.warning} style={{ marginRight: 10 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.alertTitle, { color: colors.warning }]}>Chưa ghi nhận bài nộp</Text>
-                  <Text style={[styles.alertBody, { color: colors.textSecondary }]}>
-<<<<<<< HEAD
-                    {activeEntry?.lockReason ?? "Vui lòng nộp bài trước deadline."}
-=======
-                    {activeEntry?.lockReason ?? "Vui lòng nộp bài trên SEAL Web trước deadline."}
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
-                  </Text>
-                </View>
+            <View style={[styles.alertBanner, { backgroundColor: `${colors.warning}10`, borderColor: `${colors.warning}30` }]}>
+              <AlertTriangle size={18} color={colors.warning} style={{ marginRight: 10 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.alertTitle, { color: colors.warning }]}>Chưa ghi nhận bài nộp</Text>
+                <Text style={[styles.alertBody, { color: colors.textSecondary }]}>
+                  {activeEntry?.lockReason ?? "Vui lòng nộp bài trước deadline."}
+                </Text>
               </View>
             </View>
           )}
         </View>
 
-<<<<<<< HEAD
         {canSubmit && (
           <View style={[styles.formBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 12 }]}>
-              NỘP BÀI
+              NỘP BÀI (TRƯỞNG NHÓM)
             </Text>
-            {workspace?.team?.githubRepoUrl ? (
-              <Text style={[styles.hint, { color: colors.textSecondary }]}>
-                Repo đội: {workspace.team.githubRepoUrl}
-              </Text>
-            ) : null}
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>GitHub URL</Text>
-            <TextInput
-              value={githubUrl}
-              onChangeText={setGithubUrl}
-              placeholder={workspace?.team?.githubRepoUrl ?? "https://github.com/org/repo"}
-              placeholderTextColor={colors.textSecondary}
-              autoCapitalize="none"
-              keyboardType="url"
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.cardElevated }]}
-            />
+
+            {(round.submissionType ?? "github_link") === "github_link" && (
+              <>
+                {workspace.team.githubRepoUrl ? (
+                  <Text style={[styles.hint, { color: colors.textSecondary }]}>
+                    Repo đội: {workspace.team.githubRepoUrl}
+                  </Text>
+                ) : null}
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>GitHub URL</Text>
+                <TextInput
+                  value={githubUrl}
+                  onChangeText={setGithubUrl}
+                  placeholder={workspace.team.githubRepoUrl ?? "https://github.com/org/repo"}
+                  placeholderTextColor={colors.textSecondary}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.cardElevated }]}
+                />
+              </>
+            )}
+
+            {(round.submissionType ?? "github_link") === "file" && (
+              <>
+                <Text style={[styles.hint, { color: colors.textSecondary }]}>
+                  Tối đa {round.maxFileSizeMb ?? 50}MB
+                </Text>
+                <TouchableOpacity
+                  style={[styles.fileBtn, { borderColor: colors.border, backgroundColor: colors.cardElevated }]}
+                  onPress={handlePickFile}
+                >
+                  <Upload size={18} color={colors.accent} />
+                  <Text style={[styles.fileBtnText, { color: colors.textPrimary }]}>
+                    {pickedFile ? pickedFile.name : "Chọn file"}
+                  </Text>
+                </TouchableOpacity>
+                {pickedFile ? (
+                  <View style={styles.fileMeta}>
+                    <FileText size={14} color={colors.textSecondary} />
+                    <Text style={{ color: colors.textSecondary, fontSize: 12, marginLeft: 6 }}>
+                      {(pickedFile.size ? pickedFile.size / 1024 / 1024 : 0).toFixed(2)} MB
+                    </Text>
+                  </View>
+                ) : null}
+              </>
+            )}
+
             <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 12 }]}>Mô tả</Text>
             <TextInput
               value={description}
@@ -277,16 +351,19 @@ export default function RoundDetailScreen() {
             </TouchableOpacity>
           </View>
         )}
-=======
+
+        {!isLeader && teamApproved && activeEntry?.canSubmit && (
+          <Text style={[styles.hint, { color: colors.textSecondary, textAlign: "center", marginTop: 8 }]}>
+            Chỉ trưởng nhóm mới có thể nộp bài.
+          </Text>
+        )}
+
         <TouchableOpacity
-          style={[styles.webPortalBtn, { backgroundColor: colors.accent }]}
-          onPress={handleOpenWeb}
-          activeOpacity={0.85}
+          style={[styles.resultsLink, { borderColor: colors.border }]}
+          onPress={() => router.push("/results")}
         >
-          <ExternalLink size={18} color="#FFFFFF" />
-          <Text style={styles.webPortalBtnText}>Mở SEAL Web để nộp bài</Text>
+          <Text style={{ color: colors.accent, fontWeight: "700" }}>Xem điểm & feedback</Text>
         </TouchableOpacity>
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
       </ScrollView>
     </SafeAreaView>
   );
@@ -303,44 +380,38 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backBtn: { width: 32, height: 32, justifyContent: "center", alignItems: "center" },
-  headerTitle: { fontSize: 16, fontWeight: "800", textTransform: "uppercase" },
-  scrollContent: { padding: 16, paddingBottom: 40, gap: 16 },
-  emptyText: { textAlign: "center", marginTop: 40, fontSize: 14 },
-  roundHero: { borderRadius: 16, borderWidth: 1, padding: 20 },
+  headerTitle: { fontSize: 16, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
+  emptyText: { textAlign: "center", marginTop: 40, paddingHorizontal: 24 },
+  teamBanner: { borderRadius: 16, borderWidth: 1, padding: 14, marginBottom: 12 },
+  teamName: { fontSize: 18, fontWeight: "800" },
+  teamMeta: { fontSize: 12, marginTop: 4 },
+  sectionTitle: { fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 8 },
+  roundHero: { borderRadius: 20, borderWidth: 1, padding: 16 },
   cardTag: { fontSize: 10, fontWeight: "800", letterSpacing: 1 },
-  roundName: { fontSize: 20, fontWeight: "800", marginTop: 8 },
-  timeRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
-  timeLeft: { fontSize: 14, fontWeight: "700" },
+  roundName: { fontSize: 20, fontWeight: "900", marginTop: 6 },
+  timeRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 },
+  timeLeft: { fontSize: 13, fontWeight: "700" },
   statusText: { fontSize: 12, marginTop: 6 },
   progressBar: { height: 6, borderRadius: 3, overflow: "hidden" },
   progressFill: { height: "100%", borderRadius: 3 },
-  statusBox: { borderRadius: 16, borderWidth: 1, padding: 16 },
-  sectionTitle: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
+  statusBox: { borderRadius: 20, borderWidth: 1, padding: 16, marginTop: 16 },
   submittedContainer: { gap: 12 },
-  notSubmittedContainer: { gap: 12 },
-  alertBanner: { flexDirection: "row", padding: 14, borderRadius: 12, borderWidth: 1 },
+  alertBanner: { flexDirection: "row", padding: 12, borderRadius: 12, borderWidth: 1, alignItems: "flex-start" },
   alertTitle: { fontSize: 14, fontWeight: "700" },
-  alertBody: { fontSize: 12, marginTop: 4, lineHeight: 18 },
-  detailsBlock: { padding: 14, borderRadius: 12 },
-  detailLabel: { fontSize: 11, fontWeight: "600" },
+  alertBody: { fontSize: 12, marginTop: 2, lineHeight: 17 },
+  detailsBlock: { borderRadius: 12, padding: 12 },
+  detailLabel: { fontSize: 11, fontWeight: "700" },
   detailValue: { fontSize: 13, marginTop: 4 },
-<<<<<<< HEAD
-  formBox: { borderRadius: 16, borderWidth: 1, padding: 16 },
-  hint: { fontSize: 12, marginBottom: 12, lineHeight: 18 },
-  inputLabel: { fontSize: 11, fontWeight: "700", marginBottom: 6, textTransform: "uppercase" },
-  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
-  textArea: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, minHeight: 80, textAlignVertical: "top" },
-  submitBtn: { marginTop: 16, padding: 16, borderRadius: 14, alignItems: "center" },
-  submitBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-=======
-  webPortalBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    padding: 16,
-    borderRadius: 14,
-  },
-  webPortalBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
->>>>>>> 12c1d04f4a77f81e50344195c7411b286fd976e6
+  formBox: { borderRadius: 20, borderWidth: 1, padding: 16, marginTop: 16 },
+  hint: { fontSize: 12, marginBottom: 8 },
+  inputLabel: { fontSize: 11, fontWeight: "700", marginBottom: 6 },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
+  textArea: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, minHeight: 80, textAlignVertical: "top" },
+  submitBtn: { marginTop: 16, paddingVertical: 14, borderRadius: 14, alignItems: "center" },
+  submitBtnText: { color: "#FFF", fontWeight: "800", fontSize: 14 },
+  fileBtn: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14, borderRadius: 12, borderWidth: 1 },
+  fileBtnText: { fontSize: 14, fontWeight: "600", flex: 1 },
+  fileMeta: { flexDirection: "row", alignItems: "center", marginTop: 8 },
+  resultsLink: { marginTop: 20, padding: 14, borderWidth: 1, borderRadius: 12, alignItems: "center" },
 });

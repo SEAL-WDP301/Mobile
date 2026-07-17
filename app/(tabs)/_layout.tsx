@@ -2,6 +2,7 @@ import { Tabs } from "expo-router";
 import { View, StyleSheet, Platform, Dimensions, Text } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/constants/theme/useTheme";
+import StudentGuard from "@/components/student/StudentGuard";
 
 const { width } = Dimensions.get("window");
 
@@ -18,6 +19,7 @@ export default function TabsLayout() {
   };
 
   return (
+    <StudentGuard>
     <View style={[styles.wrapper, { backgroundColor: colors.bg }]}>
       {/* Background ambient glows (subtle decorative) */}
       <View style={[styles.glowTop, { backgroundColor: "#F37021", opacity: isDark ? 0.08 : 0.02 }]} />
@@ -130,6 +132,7 @@ export default function TabsLayout() {
         />
       </Tabs>
     </View>
+    </StudentGuard>
   );
 }
 

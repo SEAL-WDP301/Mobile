@@ -42,8 +42,16 @@ export default function ResultsScreen() {
   const teamName = team?.name ?? "Đội của bạn";
   const scoredRounds =
     workspace?.roundSubmissions?.filter(
-      (entry) => entry.teamRound?.score != null,
+      (entry) =>
+        entry.round.status === "results_published" &&
+        entry.teamRound?.score != null,
     ) ?? [];
+  const waitingForPublishedResults =
+    !!workspace?.roundSubmissions?.some(
+      (entry) =>
+        entry.teamRound?.score != null &&
+        entry.round.status !== "results_published",
+    );
 
   const loadFeedbacks = useCallback(async () => {
     if (!selectedEventId) return;
@@ -141,11 +149,43 @@ export default function ResultsScreen() {
                   <Text style={[styles.roundLabel, { color: colors.textSecondary }]}>
                     Trạng thái: {entry.teamRound?.status ?? "—"}
                   </Text>
+
+                  {(entry.submission?.scores?.length ?? 0) > 0 ? (
+                    <View style={[styles.scoreBreakdown, { borderTopColor: colors.border }]}>
+                      {entry.submission?.scores?.map((score) => (
+                        <View key={score.id} style={[styles.scoreRow, { backgroundColor: colors.cardElevated }]}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.criterionName, { color: colors.textPrimary }]}>
+                              {score.criterion.name}
+                            </Text>
+                            <Text style={[styles.feedbackDate, { color: colors.textSecondary }]}>
+                              {score.judge.name}
+                              {score.comment ? ` · ${score.comment}` : ""}
+                            </Text>
+                          </View>
+                          <Text style={[styles.criterionScore, { color: colors.accent }]}>
+                            {Number(score.scoreValue).toFixed(1)}/{Number(score.criterion.maxScore).toFixed(1)}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
                 </View>
               ))}
             </View>
           </>
         )}
+
+        {scoredRounds.length === 0 ? (
+          <View style={[styles.emptyCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <Trophy size={28} color={colors.textSecondary} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              {waitingForPublishedResults
+                ? "Điểm đang được BTC kiểm tra và chưa công bố."
+                : "Chưa có kết quả vòng nào được công bố."}
+            </Text>
+          </View>
+        ) : null}
 
         <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginLeft: 4, marginTop: 8 }]}>
           NHẬN XÉT CHI TIẾT
@@ -268,6 +308,10 @@ const styles = StyleSheet.create({
   },
   mentorName: { fontSize: 14, fontWeight: "700" },
   scoreText: { fontSize: 16, fontWeight: "800" },
+  scoreBreakdown: { borderTopWidth: 1, marginTop: 10, paddingTop: 10, gap: 8 },
+  scoreRow: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 10, padding: 10 },
+  criterionName: { fontSize: 12, fontWeight: "700" },
+  criterionScore: { fontSize: 13, fontWeight: "800" },
   feedbackDate: { fontSize: 11 },
   roundLabel: { fontSize: 11, fontWeight: "700", marginBottom: 8 },
   commentBox: { borderRadius: 12, padding: 10, flexDirection: "row", alignItems: "flex-start" },

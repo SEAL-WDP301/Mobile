@@ -30,17 +30,22 @@ export interface StudentProfile {
   studentCode: string;
   universityName?: string | null;
   phone?: string | null;
+  githubUsername?: string | null;
 }
 
 export interface StakeholderProfile {
   id: number;
   jobTitle?: string | null;
   organization?: string | null;
+  experience?: string | null;
+  achievements?: string | null;
   bio?: string | null;
+  isPublic?: boolean;
 }
 
 export interface SignInResponse {
   accessToken: string;
+  refreshToken: string;
   user: AuthUser;
 }
 
@@ -65,12 +70,36 @@ export interface PublicEvent {
   season: string;
   year: number;
   status: string;
+  imageUrl?: string | null;
+  image_url?: string | null;
   registrationDeadline?: string | null;
   startDate?: string | null;
+  endDate?: string | null;
+  end_date?: string | null;
+  githubOrgUrl?: string | null;
+  location?: string | null;
+  rules?: string | null;
   faq?: EventFaqItem[] | string | null;
   contact?: EventContactItem[] | string | null;
   tracks?: Track[];
+  prizes?: EventPrize[];
   rounds?: Round[];
+  eventAchievements?: EventAchievement[];
+  _count?: { teams: number; submissions: number };
+}
+
+export interface EventPrize {
+  id: number;
+  name: string;
+  description?: string | null;
+  quantity: number;
+}
+
+export interface EventAchievement {
+  id: number;
+  name: string;
+  track?: Pick<Track, "id" | "name"> | null;
+  award?: Pick<EventPrize, "id" | "name" | "description"> | null;
 }
 
 export interface Track {
@@ -166,6 +195,7 @@ export interface TeamInfo {
   track?: Track;
   members?: TeamMemberEntry[];
   mentorAssignments?: MentorAssignment[];
+  award?: EventPrize | null;
 }
 
 export interface RegistrationStatus {
@@ -193,6 +223,24 @@ export interface Submission {
   description?: string | null;
   submittedAt: string;
   status: string;
+  scores?: SubmissionScore[];
+}
+
+export interface SubmissionScore {
+  id: number;
+  scoreValue: number | string;
+  comment?: string | null;
+  criterion: {
+    id: number;
+    name: string;
+    maxScore: number | string;
+    weight: number | string;
+  };
+  judge: {
+    id: number;
+    name: string;
+    avatarUrl?: string | null;
+  };
 }
 
 export interface WorkspaceOverview {
@@ -203,6 +251,22 @@ export interface WorkspaceOverview {
   currentActiveRound?: Round | null;
   latestSubmission?: Submission | null;
   mentorFeedbacks?: MentorFeedback[];
+  isEliminated?: boolean;
+}
+
+export interface ParticipantHistoryEntry {
+  id: number;
+  name: string;
+  status: string;
+  event: PublicEvent;
+  track?: Track | null;
+  award?: EventPrize | null;
+}
+
+export interface ProfileHistory {
+  hackerHistory: ParticipantHistoryEntry[];
+  judgeHistory: unknown[];
+  mentorHistory: unknown[];
 }
 
 export type FeedbackStatus = "unread" | "acknowledged" | "completed";
@@ -227,6 +291,7 @@ export interface AppNotification {
   content: string;
   isRead: boolean;
   createdAt: string;
+  actionUrl?: string | null;
   event?: { name: string } | null;
 }
 

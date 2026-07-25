@@ -30,6 +30,7 @@ export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? getDefaultApiBaseUrl();
 
 export const TOKEN_STORAGE_KEY = "seal_access_token";
+export const REFRESH_TOKEN_STORAGE_KEY = "seal_refresh_token";
 
 /** Socket.IO server root (Nest namespace `/chat`). */
 export function getSocketBaseUrl(): string {

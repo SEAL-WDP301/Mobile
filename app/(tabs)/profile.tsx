@@ -141,7 +141,7 @@ export default function ProfileScreen() {
           <TouchableOpacity 
             style={[styles.rowItem, { borderBottomColor: colors.border }]} 
             activeOpacity={0.7}
-            onPress={() => router.push("/(tabs)/competitions")}
+            onPress={() => router.push("/activity-detail")}
           >
             <View style={styles.rowLeft}>
               <Award size={16} color={colors.accent} style={{ marginRight: 12 }} />

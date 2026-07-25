@@ -5,18 +5,21 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function AuthCallbackScreen() {
-  const { token } = useLocalSearchParams<{ token?: string }>();
-  const { loginWithAccessToken } = useAuth();
+  const { token, refreshToken } = useLocalSearchParams<{
+    token?: string;
+    refreshToken?: string;
+  }>();
+  const { loginWithTokens } = useAuth();
 
   useEffect(() => {
     const run = async () => {
-      if (!token) {
+      if (!token || !refreshToken) {
         router.replace("/auth/login");
         return;
       }
 
       try {
-        await loginWithAccessToken(String(token));
+        await loginWithTokens(String(token), String(refreshToken));
         router.replace("/(tabs)");
       } catch {
         router.replace("/auth/login");
@@ -24,7 +27,7 @@ export default function AuthCallbackScreen() {
     };
 
     void run().catch(() => router.replace("/auth/login"));
-  }, [token, loginWithAccessToken]);
+  }, [token, refreshToken, loginWithTokens]);
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

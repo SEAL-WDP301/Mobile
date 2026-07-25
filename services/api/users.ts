@@ -1,4 +1,9 @@
-import type { AppNotification, AuthUser, StudentProfile } from "@/types/api";
+import type {
+  AppNotification,
+  AuthUser,
+  ProfileHistory,
+  StudentProfile,
+} from "@/types/api";
 import { apiRequest } from "./client";
 
 export interface UpsertStudentProfilePayload {
@@ -19,24 +24,28 @@ export async function updateStudentProfile(data: UpsertStudentProfilePayload) {
   });
 }
 
+export async function getProfileHistory() {
+  return apiRequest<ProfileHistory>("/users/profile-history");
+}
+
 export async function getNotifications() {
-  return apiRequest<AppNotification[]>("/users/notifications");
+  return apiRequest<AppNotification[]>("/notifications");
 }
 
 export async function markNotificationRead(id: number) {
-  return apiRequest<null>(`/users/notifications/${id}/read`, {
+  return apiRequest<null>(`/notifications/${id}/read`, {
     method: "PATCH",
   });
 }
 
 export async function markAllNotificationsRead() {
-  return apiRequest<null>("/users/notifications/read-all", {
+  return apiRequest<null>("/notifications/read-all", {
     method: "PATCH",
   });
 }
 
 export async function deleteNotification(id: number) {
-  return apiRequest<null>(`/users/notifications/${id}`, {
+  return apiRequest<null>(`/notifications/${id}`, {
     method: "DELETE",
   });
 }

@@ -15,7 +15,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  loginWithAccessToken: (accessToken: string) => Promise<void>;
+  loginWithTokens: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -52,8 +52,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   }, []);
 
-  const loginWithAccessToken = useCallback(async (accessToken: string) => {
-    const profile = await authApi.completeOAuthLogin(accessToken);
+  const loginWithTokens = useCallback(async (
+    accessToken: string,
+    refreshToken: string,
+  ) => {
+    const profile = await authApi.completeOAuthLogin(accessToken, refreshToken);
     setUser(profile);
   }, []);
 
@@ -75,11 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user,
       isLoading,
       login,
-      loginWithAccessToken,
+      loginWithTokens,
       logout,
       refreshProfile,
     }),
-    [user, isLoading, login, loginWithAccessToken, logout, refreshProfile],
+    [user, isLoading, login, loginWithTokens, logout, refreshProfile],
   );
 
   return (

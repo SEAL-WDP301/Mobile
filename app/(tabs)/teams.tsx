@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  Dimensions,
-  Alert
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -30,16 +28,15 @@ import { usePendingInvitations } from "@/hooks/usePendingInvitations";
 import { usePublicEvents } from "@/hooks/usePublicEvents";
 import { getInitials, mapTeamRoleLabel } from "@/utils/format";
 import { getPublicEventById } from "@/services/api/events";
+import { isEventRegistrationOpen } from "@/utils/eventRegistration";
 import TeamManageModal from "@/components/student/TeamManageModal";
 import type { PublicEvent } from "@/types/api";
-
-const { width } = Dimensions.get("window");
 
 export default function TeamsScreen() {
   const { isDark } = useTheme();
   const { user } = useAuth();
   const { selectedEventId } = useEventContext();
-  const { data: teamStatus, loading, refresh: refreshTeamStatus } = useTeamStatus(selectedEventId);
+  const { data: teamStatus, refresh: refreshTeamStatus } = useTeamStatus(selectedEventId);
   const { data: workspace, refresh: refreshWorkspace } = useWorkspace(selectedEventId);
   const { items: invitations, loading: loadingInvites, accept, reject } = usePendingInvitations();
   const { events: publicEvents } = usePublicEvents();
@@ -65,6 +62,8 @@ export default function TeamsScreen() {
   const teamInitials = getInitials(teamName);
   const isApproved = team?.status === "approved";
   const hasSubmission = !!workspace?.latestSubmission;
+  const canManageTeam =
+    isLeader && !!eventDetail && isEventRegistrationOpen(eventDetail);
 
   useEffect(() => {
     if (!selectedEventId) {
@@ -243,7 +242,7 @@ export default function TeamsScreen() {
             )}
 
             {/* ================= LEADER ACTIONS ================= */}
-            {isLeader && (
+            {canManageTeam && (
               <TouchableOpacity
                 style={[styles.ctaPrimary, { backgroundColor: colors.accent, marginBottom: 8 }]}
                 activeOpacity={0.85}
@@ -251,6 +250,15 @@ export default function TeamsScreen() {
               >
                 <Text style={styles.ctaPrimaryText}>Quản lý đội (mời/xóa thành viên)</Text>
               </TouchableOpacity>
+            )}
+
+            {isLeader && eventDetail && !canManageTeam && (
+              <View style={[styles.warningBox, { backgroundColor: `${colors.warning}10`, borderColor: `${colors.warning}30` }]}>
+                <Info size={16} color={colors.warning} style={{ marginRight: 10, marginTop: 2 }} />
+                <Text style={[styles.warningText, { color: colors.warning }]}>
+                  Danh sách đội đã khóa vì sự kiện không còn ở giai đoạn đăng ký active.
+                </Text>
+              </View>
             )}
 
             {!isLeader && (

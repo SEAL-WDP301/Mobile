@@ -6,8 +6,7 @@ export function isRegistrationDeadlinePassed(event: PublicEvent): boolean {
 }
 
 export function isEventRegistrationOpen(event: PublicEvent): boolean {
-  const activeStatus = event.status === "active" || event.status === "ongoing";
-  if (!activeStatus) return false;
+  if (event.status !== "active") return false;
   return !isRegistrationDeadlinePassed(event);
 }
 

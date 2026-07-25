@@ -14,7 +14,7 @@ import { startGithubOAuth } from "@/services/oauth";
 
 export default function LoginForm() {
   const { theme } = useTheme();
-  const { login, loginWithAccessToken } = useAuth();
+  const { login, loginWithTokens } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,8 +46,8 @@ export default function LoginForm() {
   const handleGithubLogin = async () => {
     try {
       setGithubLoading(true);
-      const accessToken = await startGithubOAuth();
-      await loginWithAccessToken(accessToken);
+      const tokens = await startGithubOAuth();
+      await loginWithTokens(tokens.accessToken, tokens.refreshToken);
       router.replace("/(tabs)");
     } catch (error) {
       const message =

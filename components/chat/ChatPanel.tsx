@@ -14,11 +14,10 @@ import { Send } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeamChat } from "@/hooks/useTeamChat";
-import { useMentorChat } from "@/hooks/useMentorChat";
-import type { MentorChatMessage, TeamChatMessage } from "@/types/api";
+import type { TeamChatMessage } from "@/types/api";
 import { formatDateTime, getInitials } from "@/utils/format";
 
-type ChatMessage = TeamChatMessage | MentorChatMessage;
+type ChatMessage = TeamChatMessage;
 
 interface ChatPanelBaseProps {
   subtitle?: string;
@@ -39,18 +38,10 @@ interface MentorChannelProps extends ChatPanelBaseProps {
 export type ChatPanelProps = TeamChannelProps | MentorChannelProps;
 
 function useChatState(props: ChatPanelProps) {
-  const teamChat = useTeamChat({
-    teamId: props.channel === "team" ? props.teamId : null,
-    enabled: props.channel === "team",
+  return useTeamChat({
+    teamId: props.teamId,
+    enabled: true,
   });
-
-  const mentorChat = useMentorChat({
-    teamId: props.channel === "mentor" ? props.teamId : null,
-    mentorId: props.channel === "mentor" ? props.mentorId : null,
-    enabled: props.channel === "mentor",
-  });
-
-  return props.channel === "team" ? teamChat : mentorChat;
 }
 
 export default function ChatPanel(props: ChatPanelProps) {
@@ -76,7 +67,7 @@ export default function ChatPanel(props: ChatPanelProps) {
   const defaultSubtitle =
     props.channel === "team"
       ? "Kênh chat nội bộ giữa các thành viên trong đội."
-      : "Kênh chat riêng giữa đội và mentor được phân công.";
+      : "Mentor và thành viên trao đổi trong phòng chat chung của đội.";
 
   const handleSend = async () => {
     const text = draft.trim();

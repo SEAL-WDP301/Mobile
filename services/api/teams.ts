@@ -11,6 +11,15 @@ import type {
 } from "@/types/api";
 import { apiRequest } from "./client";
 
+interface PendingInvitationResponse {
+  teamId: number;
+  team: {
+    name: string;
+    event: { name: string };
+    leader: { name: string };
+  };
+}
+
 export async function getMyEvents() {
   return apiRequest<MyEventEntry[]>("/student/teams/my-events");
 }
@@ -65,7 +74,15 @@ export async function getMentorFeedback(eventId: number) {
 }
 
 export async function getPendingInvitations() {
-  return apiRequest<TeamInvitation[]>("/student/teams/invitations/pending");
+  const invitations = await apiRequest<PendingInvitationResponse[]>(
+    "/student/teams/invitations/pending",
+  );
+  return invitations.map<TeamInvitation>((invitation) => ({
+    teamId: invitation.teamId,
+    teamName: invitation.team.name,
+    eventName: invitation.team.event.name,
+    leaderName: invitation.team.leader.name,
+  }));
 }
 
 export async function acceptInvitation(teamId: number) {

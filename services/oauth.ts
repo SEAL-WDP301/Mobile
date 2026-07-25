@@ -9,17 +9,26 @@ export function getOAuthRedirectUri(): string {
   return Linking.createURL("auth/callback");
 }
 
-export function extractAccessTokenFromUrl(url: string): string | null {
+export function extractTokensFromUrl(
+  url: string,
+): { accessToken: string; refreshToken: string } | null {
   try {
     const parsed = new URL(url);
-    return parsed.searchParams.get("token");
+    const accessToken = parsed.searchParams.get("token");
+    const refreshToken = parsed.searchParams.get("refreshToken");
+    return accessToken && refreshToken ? { accessToken, refreshToken } : null;
   } catch {
-    const match = url.match(/[?&]token=([^&]+)/);
-    return match ? decodeURIComponent(match[1]) : null;
+    const accessMatch = url.match(/[?&]token=([^&]+)/);
+    const refreshMatch = url.match(/[?&]refreshToken=([^&]+)/);
+    if (!accessMatch || !refreshMatch) return null;
+    return {
+      accessToken: decodeURIComponent(accessMatch[1]),
+      refreshToken: decodeURIComponent(refreshMatch[1]),
+    };
   }
 }
 
-export async function startGithubOAuth(): Promise<string> {
+export async function startGithubOAuth() {
   const redirectUri = getOAuthRedirectUri();
   const authUrl = `${API_BASE_URL}/auth/github?redirect_uri=${encodeURIComponent(redirectUri)}`;
 
@@ -33,10 +42,10 @@ export async function startGithubOAuth(): Promise<string> {
     throw new Error("Đăng nhập GitHub thất bại.");
   }
 
-  const token = extractAccessTokenFromUrl(result.url);
-  if (!token) {
-    throw new Error("Không nhận được access token từ GitHub.");
+  const tokens = extractTokensFromUrl(result.url);
+  if (!tokens) {
+    throw new Error("Không nhận được token đăng nhập từ GitHub.");
   }
 
-  return token;
+  return tokens;
 }

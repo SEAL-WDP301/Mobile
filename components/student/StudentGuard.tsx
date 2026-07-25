@@ -35,7 +35,7 @@ export default function StudentGuard({ children }: StudentGuardProps) {
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Vui lòng đăng nhập bằng tài khoản sinh viên để tiếp tục.
         </Text>
-        <Button title="Đăng nhập" onPress={() => router.push("/login")} style={{ marginTop: 16 }} />
+        <Button title="Đăng nhập" onPress={() => router.push("/auth/login")} style={{ marginTop: 16 }} />
       </View>
     );
   }

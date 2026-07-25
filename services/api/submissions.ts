@@ -1,8 +1,18 @@
 import { API_BASE_URL } from "@/constants/api";
-import type { FeedbackStatus, MentorFeedback, Submission } from "@/types/api";
-import type { ApiErrorResponse, ApiSuccessResponse } from "@/types/api";
+import type {
+  ApiErrorResponse,
+  ApiSuccessResponse,
+  FeedbackStatus,
+  MentorFeedback,
+  Submission,
+} from "@/types/api";
 import { getAccessToken } from "./tokenStorage";
-import { ApiError, notifyUnauthorized } from "./client";
+import {
+  apiRequest,
+  ApiError,
+  notifyUnauthorized,
+  renewAccessToken,
+} from "./client";
 
 export interface SubmitProjectPayload {
   eventId: number;
@@ -36,7 +46,7 @@ export async function submitProject(payload: SubmitProjectPayload): Promise<Subm
     } as unknown as Blob);
   }
 
-  const token = await getAccessToken();
+  let token = await getAccessToken();
   if (!token) {
     await notifyUnauthorized();
     throw new ApiError("Unauthorized", 401);
@@ -46,11 +56,24 @@ export async function submitProject(payload: SubmitProjectPayload): Promise<Subm
     Authorization: `Bearer ${token}`,
   };
 
-  const response = await fetch(`${API_BASE_URL}/student/teams/my-team/submissions`, {
+  const requestUrl = `${API_BASE_URL}/student/teams/my-team/submissions`;
+  let response = await fetch(requestUrl, {
     method: "POST",
     headers,
     body: form,
   });
+
+  if (response.status === 401) {
+    token = await renewAccessToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+      response = await fetch(requestUrl, {
+        method: "POST",
+        headers,
+        body: form,
+      });
+    }
+  }
 
   const json = await response.json().catch(() => null);
 
@@ -58,9 +81,12 @@ export async function submitProject(payload: SubmitProjectPayload): Promise<Subm
     if (response.status === 401) await notifyUnauthorized();
     const message =
       json && typeof json === "object" && "message" in json
-        ? Array.isArray((json as ApiErrorResponse).message)
-          ? (json as ApiErrorResponse).message.join(", ")
-          : String((json as ApiErrorResponse).message)
+        ? (() => {
+            const apiMessage = (json as ApiErrorResponse).message;
+            return Array.isArray(apiMessage)
+              ? apiMessage.join(", ")
+              : String(apiMessage);
+          })()
         : `HTTP ${response.status}`;
     throw new ApiError(message, response.status);
   }

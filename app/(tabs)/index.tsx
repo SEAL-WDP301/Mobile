@@ -10,7 +10,7 @@ import {
   Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   Bell,
   Clock,
@@ -32,6 +32,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEventContext, useSelectedEvent } from "@/contexts/EventContext";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useTeamStatus } from "@/hooks/useTeamStatus";
+import { usePublicEvent } from "@/hooks/usePublicEvent";
 import { useNotifications } from "@/hooks/useNotifications";
 import RoundTimeline from "@/components/student/RoundTimeline";
 import { mapTeamStatusLabel } from "@/utils/eventRegistration";
@@ -41,6 +42,7 @@ import {
   formatDateTime,
   formatRelativeTime,
   getInitials,
+  mapEventStatusLabel,
   mapRoundStatusLabel,
   mapTeamRoleLabel,
 } from "@/utils/format";
@@ -50,15 +52,41 @@ const { width } = Dimensions.get("window");
 export default function HomeScreen() {
   const { isDark } = useTheme();
   const { user } = useAuth();
-  const { myEvents, selectedEventId, setSelectedEventId } = useEventContext();
-  const selectedEvent = useSelectedEvent();
-  const { data: workspace } = useWorkspace(selectedEventId);
-  const { data: teamStatus } = useTeamStatus(selectedEventId);
+  const { eventId: eventIdParam } = useLocalSearchParams<{
+    eventId?: string | string[];
+  }>();
+  const { myEvents, selectedEventId } = useEventContext();
+  const routeEventIdValue = Array.isArray(eventIdParam) ? eventIdParam[0] : eventIdParam;
+  const parsedRouteEventId = routeEventIdValue
+    ? Number.parseInt(routeEventIdValue, 10)
+    : null;
+  const routeEventId =
+    parsedRouteEventId && Number.isFinite(parsedRouteEventId)
+      ? parsedRouteEventId
+      : null;
+  const workspaceEventId = routeEventId ?? selectedEventId;
+  const selectedEventFromContext = useSelectedEvent();
+  const selectedEvent =
+    myEvents.find((entry) => entry.event.id === workspaceEventId) ??
+    (routeEventId ? null : selectedEventFromContext);
+  const { data: eventDetail } = usePublicEvent(workspaceEventId);
+  const { data: workspace } = useWorkspace(workspaceEventId);
+  const { data: teamStatus } = useTeamStatus(workspaceEventId);
   const { unreadCount, items: notificationItems } = useNotifications();
+  const eventEnded = eventDetail?.status === "closed";
 
-  const activeEntry = workspace?.roundSubmissions?.find(
-    (r) => r.round.id === workspace.currentActiveRound?.id,
-  ) ?? workspace?.roundSubmissions?.find((r) => r.canSubmit) ?? workspace?.roundSubmissions?.[0];
+  const roundSubmissions = workspace?.roundSubmissions ?? [];
+  const activeEntry =
+    roundSubmissions.find(
+      (r) => r.round.id === workspace?.currentActiveRound?.id,
+    ) ??
+    (eventEnded
+      ? [...roundSubmissions]
+          .reverse()
+          .find((entry) => entry.round.status === "results_published") ??
+        roundSubmissions[roundSubmissions.length - 1]
+      : roundSubmissions.find((r) => r.canSubmit)) ??
+    roundSubmissions[0];
 
   const currentRound = activeEntry?.round;
   const currentSubmission = activeEntry?.submission;
@@ -68,7 +96,10 @@ export default function HomeScreen() {
 
   const displayName = user?.name ?? "Bạn";
   const roleLabel = workspace?.role ? mapTeamRoleLabel(workspace.role) : "Sinh viên";
-  const eventName = selectedEvent?.event.name ?? myEvents[0]?.event.name ?? "Cuộc thi";
+  const eventName =
+    eventDetail?.name ??
+    selectedEvent?.event.name ??
+    "Cuộc thi";
   const teamName = team?.name ?? selectedEvent?.teamName ?? "—";
   const trackName = team?.track?.name ?? "—";
   const teamInitials = getInitials(teamName);
@@ -113,6 +144,11 @@ export default function HomeScreen() {
             <Text style={[styles.eventName, { color: colors.textPrimary }]} numberOfLines={1}>
               {eventName}
             </Text>
+            {eventDetail ? (
+              <Text style={[styles.eventStatus, { color: eventEnded ? colors.textSecondary : colors.accent }]}>
+                {mapEventStatusLabel(eventDetail.status)}
+              </Text>
+            ) : null}
           </View>
         </View>
 
@@ -150,11 +186,17 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <Text style={[styles.roundName, { color: colors.textPrimary }]}>{roundName}</Text>
+          <Text style={[styles.roundName, { color: colors.textPrimary }]}>
+            {eventEnded ? `${eventName} đã kết thúc` : roundName}
+          </Text>
           
           <View style={styles.timeRow}>
-            <Clock size={14} color={colors.warning} />
-            <Text style={[styles.timeLeft, { color: colors.warning }]}>{timeLeft}</Text>
+            <Clock size={14} color={eventEnded ? colors.textSecondary : colors.warning} />
+            <Text style={[styles.timeLeft, { color: eventEnded ? colors.textSecondary : colors.warning }]}>
+              {eventEnded
+                ? `Kết thúc: ${formatDateTime(eventDetail?.endDate ?? eventDetail?.end_date)}`
+                : timeLeft}
+            </Text>
           </View>
 
           <View style={styles.progressContainer}>
@@ -196,12 +238,24 @@ export default function HomeScreen() {
             )}
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.cardActionBtn, { borderTopColor: colors.border }]}
             activeOpacity={0.8}
-            onPress={() => router.push("/round-detail")}
+            onPress={() =>
+              eventEnded
+                ? router.push({
+                    pathname: "/event-detail",
+                    params: { id: String(workspaceEventId) },
+                  })
+                : router.push({
+                    pathname: "/round-detail",
+                    params: { eventId: String(workspaceEventId) },
+                  })
+            }
           >
-            <Text style={[styles.cardActionBtnText, { color: colors.textPrimary }]}>Xem chi tiết vòng thi</Text>
+            <Text style={[styles.cardActionBtnText, { color: colors.textPrimary }]}>
+              {eventEnded ? "Xem thông tin & kết quả" : "Xem chi tiết vòng thi"}
+            </Text>
             <ArrowRight size={16} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
@@ -379,6 +433,9 @@ const styles = StyleSheet.create({
   topBarLeft: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+    minWidth: 0,
+    marginRight: 12,
   },
   logoWrapper: {
     width: 28,
@@ -394,12 +451,21 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   eventSelector: {
-    flexDirection: "row",
-    alignItems: "center",
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "column",
+    alignItems: "flex-start",
   },
   eventName: {
     fontSize: 15,
     fontWeight: "700",
+    width: "100%",
+  },
+  eventStatus: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+    marginTop: 1,
   },
   circleButton: {
     width: 38,

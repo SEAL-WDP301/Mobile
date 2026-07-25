@@ -40,7 +40,7 @@ export default function CompetitionsScreen() {
   const { isDark } = useTheme();
   const [activeSegment, setActiveSegment] = useState<Segment>("participating");
   const { events: publicEvents, loading: loadingPublic, error: publicEventsError } = usePublicEvents();
-  const { myEvents, isLoading: loadingMy } = useEventContext();
+  const { myEvents, setSelectedEventId, isLoading: loadingMy } = useEventContext();
 
   const colors = {
     bg: isDark ? "#11100F" : "#F9F6F0",
@@ -86,11 +86,24 @@ export default function CompetitionsScreen() {
     if (activeSegment === "open") {
       return event.registrationOpen && event.myTeam === "";
     }
-    return (
-      event.status === "closed" ||
-      (!event.registrationOpen && event.myTeam === "")
-    );
+    return event.status === "closed";
   });
+
+  const openEvent = (event: DisplayEvent) => {
+    if (event.myTeam) {
+      setSelectedEventId(event.id);
+      router.push({
+        pathname: "/(tabs)",
+        params: { eventId: String(event.id) },
+      });
+      return;
+    }
+
+    router.push({
+      pathname: "/event-detail",
+      params: { id: String(event.id) },
+    });
+  };
 
   const loading = loadingPublic || loadingMy;
 
@@ -197,11 +210,11 @@ export default function CompetitionsScreen() {
                 <TouchableOpacity
                   style={[styles.ctaBtn, { backgroundColor: colors.cardElevated }]}
                   activeOpacity={0.8}
-                  onPress={() =>
-                    router.push({ pathname: "/event-detail", params: { id: String(event.id) } })
-                  }
+                  onPress={() => openEvent(event)}
                 >
-                  <Text style={[styles.ctaBtnText, { color: colors.textPrimary }]}>Xem cuộc thi</Text>
+                  <Text style={[styles.ctaBtnText, { color: colors.textPrimary }]}>
+                    {event.myTeam ? "Vào workspace" : "Xem cuộc thi"}
+                  </Text>
                   <ArrowRight size={16} color={colors.textPrimary} />
                 </TouchableOpacity>
 

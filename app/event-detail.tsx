@@ -19,6 +19,7 @@ import { useTheme } from "@/constants/theme/useTheme";
 import { SUPPORT_EMAIL, SUPPORT_PHONE } from "@/constants/config";
 import { getPublicEventById } from "@/services/api/events";
 import { useTeamStatus } from "@/hooks/useTeamStatus";
+import { useEventContext } from "@/contexts/EventContext";
 import type { PublicEvent } from "@/types/api";
 import { isEventRegistrationOpen } from "@/utils/eventRegistration";
 import {
@@ -35,6 +36,7 @@ export default function EventDetailScreen() {
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const { data: teamStatus } = useTeamStatus(eventId);
+  const { setSelectedEventId } = useEventContext();
 
   useEffect(() => {
     if (!eventId) return;
@@ -69,9 +71,19 @@ export default function EventDetailScreen() {
     : "—";
   const displayTheme = event?.description ?? "Chưa có mô tả";
   const displayDate = event
-    ? formatDateRange(event.startDate, event.registrationDeadline)
+    ? formatDateRange(event.startDate, event.endDate ?? event.end_date)
     : "—";
   const rounds = event?.rounds ?? [];
+  const achievements = event?.eventAchievements ?? [];
+
+  const openWorkspace = () => {
+    if (!eventId) return;
+    setSelectedEventId(eventId);
+    router.push({
+      pathname: "/(tabs)",
+      params: { eventId: String(eventId) },
+    });
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top", "bottom"]}>
@@ -105,6 +117,44 @@ export default function EventDetailScreen() {
               </View>
             </View>
           </View>
+
+          {event.status === "closed" ? (
+            <>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+                KẾT QUẢ CUỘC THI
+              </Text>
+              <View style={[styles.roundsCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                {achievements.length === 0 ? (
+                  <Text style={[styles.regValue, { color: colors.textSecondary, padding: 16 }]}>
+                    Backend chưa công bố giải thưởng.
+                  </Text>
+                ) : (
+                  achievements.map((achievement, index) => (
+                    <View
+                      key={achievement.id}
+                      style={[
+                        styles.roundRow,
+                        index !== achievements.length - 1 && {
+                          borderBottomColor: colors.border,
+                          borderBottomWidth: 1,
+                        },
+                      ]}
+                    >
+                      <View style={styles.roundInfoCol}>
+                        <Text style={[styles.roundNameText, { color: colors.textPrimary }]}>
+                          {achievement.award?.name ?? "Giải thưởng"}
+                        </Text>
+                        <Text style={[styles.roundDateText, { color: colors.textSecondary }]}>
+                          {achievement.name}
+                          {achievement.track?.name ? ` · ${achievement.track.name}` : ""}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                )}
+              </View>
+            </>
+          ) : null}
 
           <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
             <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>THÔNG TIN THAM GIA</Text>
@@ -193,7 +243,7 @@ export default function EventDetailScreen() {
             <TouchableOpacity
               style={[styles.registerBtn, { backgroundColor: colors.success, marginTop: 8 }]}
               activeOpacity={0.85}
-              onPress={() => router.push("/round-detail")}
+              onPress={openWorkspace}
             >
               <Text style={styles.registerBtnText}>Vào workspace đội</Text>
             </TouchableOpacity>

@@ -29,11 +29,13 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const refreshMyEvents = useCallback(async () => {
-    if (authLoading || !isAuthenticated) {
-      setMyEvents([]);
-      if (!isAuthenticated) {
-        setSelectedEventIdState(null);
-      }
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      setMyEvents((current) => (current.length === 0 ? current : []));
+      setSelectedEventIdState((current) =>
+        current === null ? current : null,
+      );
       return;
     }
     setIsLoading(true);
@@ -45,7 +47,7 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
         return events[0]?.event.id ?? null;
       });
     } catch {
-      setMyEvents([]);
+      setMyEvents((current) => (current.length === 0 ? current : []));
     } finally {
       setIsLoading(false);
     }

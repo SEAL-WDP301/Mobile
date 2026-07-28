@@ -14,7 +14,6 @@ import {
   Users,
   CheckCircle,
   AlertCircle,
-  MessageSquare,
   ChevronRight,
   ShieldCheck,
   Info,
@@ -308,29 +307,6 @@ export default function TeamsScreen() {
                 Chưa có mentor được phân công.
               </Text>
             )}
-
-            {/* ================= ACTIONS ================= */}
-            <View style={styles.actionsRow}>
-              <TouchableOpacity 
-                style={[styles.actionBtnOutline, { borderColor: colors.border, flex: 1 }]}
-                activeOpacity={0.7}
-                onPress={() => router.push("/team-chat")}
-              >
-                <MessageSquare size={16} color={colors.textPrimary} style={{ marginRight: 8 }} />
-                <Text style={[styles.actionBtnOutlineText, { color: colors.textPrimary }]}>Chat đội</Text>
-              </TouchableOpacity>
-
-              {mentor ? (
-                <TouchableOpacity
-                  style={[styles.actionBtnOutline, { borderColor: colors.border, flex: 1 }]}
-                  activeOpacity={0.7}
-                  onPress={() => router.push("/mentor-chat")}
-                >
-                  <MessageSquare size={16} color={colors.accent} style={{ marginRight: 8 }} />
-                  <Text style={[styles.actionBtnOutlineText, { color: colors.textPrimary }]}>Chat mentor</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
 
             {isApproved && (
               <TouchableOpacity
@@ -714,12 +690,6 @@ const styles = StyleSheet.create({
   activityActionBtnText: {
     fontSize: 13,
     fontWeight: "600",
-  },
-  actionsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 8,
-    marginBottom: 10,
   },
   actionBtnOutline: {
     flex: 1.2,

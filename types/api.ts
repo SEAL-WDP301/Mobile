@@ -332,7 +332,3 @@ export interface TeamChatMessage {
   sender: ChatMessageSender;
   reads?: ChatMessageRead[];
 }
-
-export interface MentorChatMessage extends TeamChatMessage {
-  mentorId: number;
-}

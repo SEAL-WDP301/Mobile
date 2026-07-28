@@ -45,7 +45,7 @@ export default function MentorChatScreen() {
       </View>
 
       {teamId && mentorId ? (
-        <ChatPanel channel="mentor" teamId={teamId} mentorId={mentorId} />
+        <ChatPanel teamId={teamId} />
       ) : (
         <View style={styles.emptyState}>
           <Text style={{ color: colors.textPrimary, textAlign: "center", lineHeight: 20 }}>

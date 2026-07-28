@@ -74,7 +74,7 @@ export default function MentorsScreen() {
         {mentor && (
           <TouchableOpacity
             style={[styles.chatBtn, { backgroundColor: colors.accent }]}
-            onPress={() => router.push("/team-chat")}
+            onPress={() => router.push("/mentor-chat")}
             activeOpacity={0.85}
           >
             <MessageSquare size={18} color="#FFFFFF" />

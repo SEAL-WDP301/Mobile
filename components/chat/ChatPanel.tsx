@@ -13,35 +13,38 @@ import {
 import { Send } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTeamChat } from "@/hooks/useTeamChat";
+import { useMentorChat } from "@/hooks/useMentorChat";
 import type { TeamChatMessage } from "@/types/api";
 import { formatDateTime, getInitials } from "@/utils/format";
 
 type ChatMessage = TeamChatMessage;
 
-interface ChatPanelBaseProps {
+export interface ChatPanelProps {
+  teamId: number;
   subtitle?: string;
   emptyHint?: string;
 }
 
-interface TeamChannelProps extends ChatPanelBaseProps {
-  channel: "team";
-  teamId: number;
-}
-
-interface MentorChannelProps extends ChatPanelBaseProps {
-  channel: "mentor";
-  teamId: number;
-  mentorId: number;
-}
-
-export type ChatPanelProps = TeamChannelProps | MentorChannelProps;
-
 function useChatState(props: ChatPanelProps) {
-  return useTeamChat({
+  return useMentorChat({
     teamId: props.teamId,
     enabled: true,
   });
+}
+
+function getSenderRoleLabel(role: string) {
+  switch (role.toLowerCase()) {
+    case "leader":
+      return " · Trưởng nhóm";
+    case "stakeholder":
+      return " · Mentor";
+    case "organizer":
+      return " · Ban tổ chức";
+    case "admin":
+      return " · System Admin";
+    default:
+      return "";
+  }
 }
 
 export default function ChatPanel(props: ChatPanelProps) {
@@ -65,9 +68,7 @@ export default function ChatPanel(props: ChatPanelProps) {
   };
 
   const defaultSubtitle =
-    props.channel === "team"
-      ? "Kênh chat nội bộ giữa các thành viên trong đội."
-      : "Mentor và thành viên trao đổi trong phòng chat chung của đội.";
+    "Phòng trao đổi chung giữa đội, mentor và ban tổ chức liên quan.";
 
   const handleSend = async () => {
     const text = draft.trim();
@@ -86,12 +87,7 @@ export default function ChatPanel(props: ChatPanelProps) {
   const renderItem = ({ item }: { item: ChatMessage }) => {
     const isMine = item.senderId === user?.id;
     const displayContent = item.isDeleted ? "Tin nhắn đã bị xóa" : item.content;
-    const roleLabel =
-      item.sender.role === "leader" || item.sender.role === "Leader"
-        ? " · Trưởng nhóm"
-        : item.sender.role === "stakeholder"
-          ? " · Mentor"
-          : "";
+    const roleLabel = getSenderRoleLabel(item.sender.role);
 
     return (
       <View style={[styles.messageRow, isMine ? styles.messageRowMine : styles.messageRowOther]}>

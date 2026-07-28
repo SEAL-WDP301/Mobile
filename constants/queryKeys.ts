@@ -9,7 +9,4 @@ export const queryKeys = {
   mentorFeedback: (eventId: number) => ["student", "mentor-feedback", eventId] as const,
   notifications: ["users", "notifications"] as const,
   profile: ["users", "profile"] as const,
-  teamChat: (teamId: number) => ["chat", "team", teamId] as const,
-  mentorChat: (teamId: number, mentorId: number) =>
-    ["chat", "mentor", teamId, mentorId] as const,
 };

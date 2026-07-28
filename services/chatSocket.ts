@@ -65,48 +65,24 @@ export async function getChatSocket(): Promise<ChatSocket> {
   }
 }
 
-export async function joinTeamRoom(teamId: number) {
+export async function joinChatRoom(teamId: number) {
   const client = await getChatSocket();
   client.emit("join_team_room", teamId);
 }
 
-export async function leaveTeamRoom(teamId: number) {
+export async function leaveChatRoom(teamId: number) {
   if (!socket?.connected) return;
   socket.emit("leave_team_room", teamId);
 }
 
-export async function sendTeamMessage(teamId: number, content: string) {
+export async function sendChatMessage(teamId: number, content: string) {
   const client = await getChatSocket();
   client.emit("send_chat_message", { teamId, content });
 }
 
-export async function markTeamMessagesRead(teamId: number) {
+export async function markChatMessagesRead(teamId: number) {
   const client = await getChatSocket();
   client.emit("mark_as_read", teamId);
-}
-
-export async function joinMentorRoom(teamId: number, mentorId: number) {
-  const client = await getChatSocket();
-  client.emit("join_mentor_room", { teamId, mentorId });
-}
-
-export async function leaveMentorRoom(teamId: number, mentorId: number) {
-  if (!socket?.connected) return;
-  socket.emit("leave_mentor_room", { teamId, mentorId });
-}
-
-export async function sendMentorMessage(
-  teamId: number,
-  mentorId: number,
-  content: string,
-) {
-  const client = await getChatSocket();
-  client.emit("send_mentor_message", { teamId, mentorId, content });
-}
-
-export async function markMentorMessagesRead(teamId: number, mentorId: number) {
-  const client = await getChatSocket();
-  client.emit("mark_mentor_as_read", { teamId, mentorId });
 }
 
 export function disconnectChatSocket() {

@@ -1,23 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { MentorChatMessage } from "@/types/api";
-import { getMentorMessages } from "@/services/api/chat";
+import type { TeamChatMessage } from "@/types/api";
+import { getChatMessages } from "@/services/api/chat";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  joinMentorRoom,
-  leaveMentorRoom,
-  markMentorMessagesRead,
-  sendMentorMessage,
+  joinChatRoom,
+  leaveChatRoom,
+  markChatMessagesRead,
+  sendChatMessage,
   getChatSocket,
 } from "@/services/chatSocket";
 
 interface UseMentorChatOptions {
   teamId: number | null;
-  mentorId: number | null;
   enabled?: boolean;
 }
 
-function mergeMessages(existing: MentorChatMessage[], incoming: MentorChatMessage[]) {
-  const map = new Map<number, MentorChatMessage>();
+function mergeMessages(existing: TeamChatMessage[], incoming: TeamChatMessage[]) {
+  const map = new Map<number, TeamChatMessage>();
   for (const msg of existing) map.set(msg.id, msg);
   for (const msg of incoming) map.set(msg.id, msg);
   return Array.from(map.values()).sort(
@@ -27,11 +26,10 @@ function mergeMessages(existing: MentorChatMessage[], incoming: MentorChatMessag
 
 export function useMentorChat({
   teamId,
-  mentorId,
   enabled = true,
 }: UseMentorChatOptions) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const [messages, setMessages] = useState<MentorChatMessage[]>([]);
+  const [messages, setMessages] = useState<TeamChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [sending, setSending] = useState(false);
@@ -40,30 +38,29 @@ export function useMentorChat({
   const oldestCursorRef = useRef<number | null>(null);
 
   const loadInitial = useCallback(async () => {
-    if (authLoading || !isAuthenticated || !teamId || !mentorId || !enabled) {
+    if (authLoading || !isAuthenticated || !teamId || !enabled) {
       if (!authLoading && !isAuthenticated) setMessages([]);
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const data = await getMentorMessages(teamId, mentorId);
+      const data = await getChatMessages(teamId);
       setMessages(data);
       setHasMore(data.length >= 20);
       oldestCursorRef.current = data[0]?.id ?? null;
-      await joinMentorRoom(teamId, mentorId);
-      await markMentorMessagesRead(teamId, mentorId);
+      await joinChatRoom(teamId);
+      await markChatMessagesRead(teamId);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không tải được tin nhắn");
     } finally {
       setLoading(false);
     }
-  }, [authLoading, isAuthenticated, teamId, mentorId, enabled]);
+  }, [authLoading, isAuthenticated, teamId, enabled]);
 
   const loadMore = useCallback(async () => {
     if (
       !teamId ||
-      !mentorId ||
       !enabled ||
       loadingMore ||
       !hasMore ||
@@ -73,7 +70,7 @@ export function useMentorChat({
     }
     setLoadingMore(true);
     try {
-      const data = await getMentorMessages(teamId, mentorId, oldestCursorRef.current);
+      const data = await getChatMessages(teamId, oldestCursorRef.current);
       if (data.length === 0) {
         setHasMore(false);
         return;
@@ -86,16 +83,16 @@ export function useMentorChat({
     } finally {
       setLoadingMore(false);
     }
-  }, [teamId, mentorId, enabled, loadingMore, hasMore]);
+  }, [teamId, enabled, loadingMore, hasMore]);
 
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!teamId || !mentorId || !content.trim()) return;
+      if (!teamId || !content.trim()) return;
       setSending(true);
       setError(null);
       try {
-        await sendMentorMessage(teamId, mentorId, content.trim());
-        await markMentorMessagesRead(teamId, mentorId);
+        await sendChatMessage(teamId, content.trim());
+        await markChatMessagesRead(teamId);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Không gửi được tin nhắn");
         throw e;
@@ -103,11 +100,11 @@ export function useMentorChat({
         setSending(false);
       }
     },
-    [teamId, mentorId],
+    [teamId],
   );
 
   useEffect(() => {
-    if (!teamId || !mentorId || !enabled || authLoading || !isAuthenticated) {
+    if (!teamId || !enabled || authLoading || !isAuthenticated) {
       setMessages([]);
       return;
     }
@@ -119,41 +116,38 @@ export function useMentorChat({
 
     getChatSocket()
       .then((client) => {
-        if (!active || !teamId || !mentorId) return;
+        if (!active || !teamId) return;
 
-        const matchesRoom = (message: MentorChatMessage) =>
-          message.teamId === teamId && message.mentorId === mentorId;
-
-        const onReceive = (message: MentorChatMessage) => {
-          if (!matchesRoom(message)) return;
+        const onReceive = (message: TeamChatMessage) => {
+          if (message.teamId !== teamId) return;
           setMessages((prev) => mergeMessages(prev, [message]));
-          markMentorMessagesRead(teamId, mentorId).catch(() => undefined);
+          markChatMessagesRead(teamId).catch(() => undefined);
         };
 
-        const onEdited = (message: MentorChatMessage) => {
-          if (!matchesRoom(message)) return;
+        const onEdited = (message: TeamChatMessage) => {
+          if (message.teamId !== teamId) return;
           setMessages((prev) => mergeMessages(prev, [message]));
         };
 
-        const onDeleted = (message: MentorChatMessage) => {
-          if (!matchesRoom(message)) return;
+        const onDeleted = (message: TeamChatMessage) => {
+          if (message.teamId !== teamId) return;
           setMessages((prev) => mergeMessages(prev, [message]));
         };
 
-        const onReadUpdated = (updated: MentorChatMessage[]) => {
+        const onReadUpdated = (updated: TeamChatMessage[]) => {
           setMessages((prev) => mergeMessages(prev, updated));
         };
 
-        client.on("receive_mentor_message", onReceive);
-        client.on("mentor_message_edited", onEdited);
-        client.on("mentor_message_deleted", onDeleted);
-        client.on("mentor_messages_read_updated", onReadUpdated);
+        client.on("receive_chat_message", onReceive);
+        client.on("chat_message_edited", onEdited);
+        client.on("chat_message_deleted", onDeleted);
+        client.on("messages_read_updated", onReadUpdated);
 
         cleanupListeners = () => {
-          client.off("receive_mentor_message", onReceive);
-          client.off("mentor_message_edited", onEdited);
-          client.off("mentor_message_deleted", onDeleted);
-          client.off("mentor_messages_read_updated", onReadUpdated);
+          client.off("receive_chat_message", onReceive);
+          client.off("chat_message_edited", onEdited);
+          client.off("chat_message_deleted", onDeleted);
+          client.off("messages_read_updated", onReadUpdated);
         };
       })
       .catch(() => undefined);
@@ -161,11 +155,11 @@ export function useMentorChat({
     return () => {
       active = false;
       cleanupListeners?.();
-      if (teamId && mentorId) {
-        leaveMentorRoom(teamId, mentorId).catch(() => undefined);
+      if (teamId) {
+        leaveChatRoom(teamId).catch(() => undefined);
       }
     };
-  }, [teamId, mentorId, enabled, authLoading, isAuthenticated, loadInitial]);
+  }, [teamId, enabled, authLoading, isAuthenticated, loadInitial]);
 
   return {
     messages,

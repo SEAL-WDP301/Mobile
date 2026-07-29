@@ -1,6 +1,6 @@
 import React from "react";
 
-import { View, Text, StyleSheet, } from "react-native";
+import { Image, View, Text, StyleSheet, } from "react-native";
 
 import { useTheme } from "@/constants/theme/ThemeProvider";
 
@@ -15,24 +15,21 @@ export default function Logo({
 
     const sizes = {
         sm: {
-            circle: 40,
+            logo: 58,
             title: 20,
             subtitle: 10,
-            letter: 18,
         },
 
         md: {
-            circle: 50,
+            logo: 72,
             title: 24,
             subtitle: 11,
-            letter: 22,
         },
 
         lg: {
-            circle: 64,
+            logo: 112,
             title: 28,
             subtitle: 12,
-            letter: 28,
         },
     };
 
@@ -40,35 +37,14 @@ export default function Logo({
 
     return (
         <View style={styles.container}>
-            {/* Circle */}
-
-            <View
-                style={[
-                    styles.circle,
-                    {
-                        width:
-                            current.circle,
-
-                        height:
-                            current.circle,
-
-                        borderRadius:
-                            current.circle / 2,
-                    },
-                ]}
-            >
-                <Text
-                    style={[
-                        styles.letter,
-                        {
-                            fontSize:
-                                current.letter,
-                        },
-                    ]}
-                >
-                    S
-                </Text>
-            </View>
+            <Image
+                source={require("@/assets/images/seal-logo-mark.png")}
+                resizeMode="contain"
+                style={{
+                    width: current.logo,
+                    height: current.logo,
+                }}
+            />
 
             {/* Text */}
 
@@ -108,33 +84,6 @@ export default function Logo({
 const styles = StyleSheet.create({
     container: {
         alignItems: "center",
-    },
-
-    circle: {
-        justifyContent: "center",
-
-        alignItems: "center",
-
-        backgroundColor: "#F97316",
-
-        borderWidth: 1,
-
-        borderColor:
-            "rgba(249,115,22,0.3)",
-
-        shadowColor: "#F97316",
-
-        shadowOpacity: 0.3,
-
-        shadowRadius: 20,
-
-        elevation: 10,
-    },
-
-    letter: {
-        fontWeight: "700",
-
-        color: "#000",
     },
 
     textContainer: {

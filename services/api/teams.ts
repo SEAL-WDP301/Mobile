@@ -15,8 +15,12 @@ interface PendingInvitationResponse {
   teamId: number;
   team: {
     name: string;
-    event: { name: string };
-    leader: { name: string };
+    event: { id: number; name: string };
+    leader: {
+      name: string;
+      email: string;
+      avatarUrl?: string | null;
+    };
   };
 }
 
@@ -80,8 +84,11 @@ export async function getPendingInvitations() {
   return invitations.map<TeamInvitation>((invitation) => ({
     teamId: invitation.teamId,
     teamName: invitation.team.name,
+    eventId: invitation.team.event.id,
     eventName: invitation.team.event.name,
-    leaderName: invitation.team.leader.name,
+    inviterName: invitation.team.leader.name,
+    inviterEmail: invitation.team.leader.email,
+    inviterAvatarUrl: invitation.team.leader.avatarUrl,
   }));
 }
 

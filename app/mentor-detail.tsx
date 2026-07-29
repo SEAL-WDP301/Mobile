@@ -13,7 +13,7 @@ import { ChevronLeft, Briefcase, MessageSquare, Award } from "lucide-react-nativ
 import { useTheme } from "@/constants/theme/useTheme";
 import { useEventContext } from "@/contexts/EventContext";
 import { useTeamStatus } from "@/hooks/useTeamStatus";
-import { getInitials } from "@/utils/format";
+import Avatar from "@/components/ui/Avatar";
 
 export default function MentorDetailScreen() {
   const { isDark } = useTheme();
@@ -74,9 +74,13 @@ export default function MentorDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.profileCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
           <View style={styles.profileHeader}>
-            <View style={[styles.avatarLarge, { backgroundColor: colors.accent }]}>
-              <Text style={styles.avatarText}>{getInitials(displayName)}</Text>
-            </View>
+            <Avatar
+              name={displayName}
+              imageUrl={mentor.avatarUrl}
+              size={64}
+              borderRadius={16}
+              backgroundColor={colors.accent}
+            />
             <View style={styles.profileInfo}>
               <Text style={[styles.nameText, { color: colors.textPrimary }]}>{displayName}</Text>
               <Text style={[styles.positionText, { color: colors.textSecondary }]}>{position}</Text>
@@ -133,8 +137,6 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, paddingBottom: 40 },
   profileCard: { borderRadius: 20, borderWidth: 1, padding: 16, marginBottom: 16 },
   profileHeader: { flexDirection: "row", alignItems: "center", gap: 14 },
-  avatarLarge: { width: 64, height: 64, borderRadius: 16, justifyContent: "center", alignItems: "center" },
-  avatarText: { color: "#FFFFFF", fontSize: 22, fontWeight: "900" },
   profileInfo: { flex: 1 },
   nameText: { fontSize: 20, fontWeight: "800" },
   positionText: { fontSize: 13, marginTop: 4 },

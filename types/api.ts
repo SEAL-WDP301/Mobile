@@ -298,8 +298,11 @@ export interface AppNotification {
 export interface TeamInvitation {
   teamId: number;
   teamName: string;
+  eventId: number;
   eventName: string;
-  leaderName: string;
+  inviterName: string;
+  inviterEmail: string;
+  inviterAvatarUrl?: string | null;
 }
 
 export interface ChatMessageSender {

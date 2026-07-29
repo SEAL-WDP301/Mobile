@@ -13,7 +13,7 @@ import { GraduationCap, MessageSquare, ChevronRight } from "lucide-react-native"
 import { useTheme } from "@/constants/theme/useTheme";
 import { useEventContext } from "@/contexts/EventContext";
 import { useTeamStatus } from "@/hooks/useTeamStatus";
-import { getInitials } from "@/utils/format";
+import Avatar from "@/components/ui/Avatar";
 
 export default function MentorsScreen() {
   const { isDark } = useTheme();
@@ -58,9 +58,13 @@ export default function MentorsScreen() {
             activeOpacity={0.85}
             onPress={() => router.push("/mentor-detail")}
           >
-            <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
-              <Text style={styles.avatarText}>{getInitials(mentor.name)}</Text>
-            </View>
+            <Avatar
+              name={mentor.name}
+              imageUrl={mentor.avatarUrl}
+              size={52}
+              borderRadius={14}
+              backgroundColor={colors.accent}
+            />
             <View style={styles.mentorInfo}>
               <Text style={[styles.mentorName, { color: colors.textPrimary }]}>{mentor.name}</Text>
               <Text style={[styles.mentorRole, { color: colors.textSecondary }]}>
@@ -110,14 +114,6 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 14,
   },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: { color: "#FFFFFF", fontSize: 18, fontWeight: "900" },
   mentorInfo: { flex: 1 },
   mentorName: { fontSize: 16, fontWeight: "700" },
   mentorRole: { fontSize: 12, marginTop: 4 },

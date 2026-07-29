@@ -7,6 +7,7 @@ import ChatPanel from "@/components/chat/ChatPanel";
 import { useTheme } from "@/constants/theme/useTheme";
 import { useEventContext } from "@/contexts/EventContext";
 import { useTeamStatus } from "@/hooks/useTeamStatus";
+import Avatar from "@/components/ui/Avatar";
 
 export default function MentorChatScreen() {
   const { isDark } = useTheme();
@@ -24,6 +25,7 @@ export default function MentorChatScreen() {
     bg: isDark ? "#11100F" : "#F9F6F0",
     textPrimary: isDark ? "#F8F7F5" : "#1C1917",
     textSecondary: isDark ? "#A8A29E" : "#78716C",
+    accent: "#F37021",
     border: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
   };
 
@@ -35,17 +37,29 @@ export default function MentorChatScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ChevronLeft size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <View style={styles.headerText}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Chat mentor</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-            {mentorName} · {teamName}
-          </Text>
+        <View style={styles.headerIdentity}>
+          <Avatar
+            name={mentorName}
+            imageUrl={mentor?.avatarUrl}
+            size={38}
+            borderRadius={12}
+            backgroundColor={colors.accent}
+          />
+          <View style={styles.headerText}>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>{mentorName}</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+              Mentor của {teamName}
+            </Text>
+          </View>
         </View>
         <View style={{ width: 32 }} />
       </View>
 
       {teamId && mentorId ? (
-        <ChatPanel teamId={teamId} />
+        <ChatPanel
+          teamId={teamId}
+          subtitle="Phòng trao đổi giữa đội của bạn và mentor. Ban tổ chức có thể hỗ trợ khi cần."
+        />
       ) : (
         <View style={styles.emptyState}>
           <Text style={{ color: colors.textPrimary, textAlign: "center", lineHeight: 20 }}>
@@ -69,7 +83,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backBtn: { width: 32, height: 32, justifyContent: "center", alignItems: "center" },
-  headerText: { flex: 1, alignItems: "center" },
+  headerIdentity: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 8,
+  },
+  headerText: { flex: 1 },
   title: { fontSize: 15, fontWeight: "800" },
   subtitle: { fontSize: 12, marginTop: 2 },
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },

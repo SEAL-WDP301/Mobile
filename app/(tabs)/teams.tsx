@@ -29,12 +29,17 @@ import { getInitials, mapTeamRoleLabel } from "@/utils/format";
 import { getPublicEventById } from "@/services/api/events";
 import { isEventRegistrationOpen } from "@/utils/eventRegistration";
 import TeamManageModal from "@/components/student/TeamManageModal";
+import Avatar from "@/components/ui/Avatar";
 import type { PublicEvent } from "@/types/api";
 
 export default function TeamsScreen() {
   const { isDark } = useTheme();
   const { user } = useAuth();
-  const { selectedEventId } = useEventContext();
+  const {
+    selectedEventId,
+    setSelectedEventId,
+    refreshMyEvents,
+  } = useEventContext();
   const { data: teamStatus, refresh: refreshTeamStatus } = useTeamStatus(selectedEventId);
   const { data: workspace, refresh: refreshWorkspace } = useWorkspace(selectedEventId);
   const { items: invitations, loading: loadingInvites, accept, reject } = usePendingInvitations();
@@ -121,6 +126,121 @@ export default function TeamsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {!loadingInvites && invitations.length > 0 && (
+          <View
+            style={[
+              styles.inviteCard,
+              {
+                backgroundColor: colors.cardBg,
+                borderColor: `${colors.accent}45`,
+              },
+            ]}
+          >
+            <Text style={[styles.inviteTitle, { color: colors.textPrimary }]}>
+              Lời mời tham gia đội
+            </Text>
+
+            {invitations.map((inv, index) => (
+              <View
+                key={inv.teamId}
+                style={[
+                  styles.inviteItem,
+                  index > 0 && {
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.invitePersonRow}>
+                  <Avatar
+                    name={inv.inviterName}
+                    imageUrl={inv.inviterAvatarUrl}
+                    size={42}
+                    borderRadius={12}
+                    backgroundColor={colors.cardElevated}
+                    textColor={colors.textPrimary}
+                  />
+                  <View style={styles.inviteDetails}>
+                    <Text
+                      style={[
+                        styles.invitePersonName,
+                        { color: colors.textPrimary },
+                      ]}
+                    >
+                      {inv.inviterName} đã mời bạn
+                    </Text>
+                    <Text
+                      style={[
+                        styles.invitePersonEmail,
+                        { color: colors.textSecondary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {inv.inviterEmail}
+                    </Text>
+                  </View>
+                </View>
+
+                <View
+                  style={[
+                    styles.inviteTarget,
+                    { backgroundColor: colors.cardElevated },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.inviteTeam,
+                      { color: colors.textPrimary },
+                    ]}
+                  >
+                    Đội {inv.teamName}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.inviteMeta,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Tham gia sự kiện {inv.eventName}
+                  </Text>
+                </View>
+
+                <View style={styles.inviteActions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.inviteAccept,
+                      { backgroundColor: colors.accent },
+                    ]}
+                    onPress={async () => {
+                      await accept(inv.teamId);
+                      await refreshMyEvents();
+                      setSelectedEventId(inv.eventId);
+                    }}
+                  >
+                    <Text style={styles.inviteBtnText}>Tham gia</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.inviteReject,
+                      { borderColor: colors.border },
+                    ]}
+                    onPress={() => reject(inv.teamId)}
+                  >
+                    <Text
+                      style={[
+                        styles.inviteRejectText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      Từ chối
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         {hasTeam ? (
           <View style={styles.teamContent}>
             {/* ================= TEAM OVERVIEW ================= */}
@@ -171,7 +291,6 @@ export default function TeamsScreen() {
             <View style={[styles.membersCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
               {members.map((member, idx) => {
                 const isYou = member.user.email === user?.email;
-                const initials = getInitials(member.user.name);
                 const isLeader = member.role === "leader";
                 return (
                 <View 
@@ -182,9 +301,14 @@ export default function TeamsScreen() {
                   ]}
                 >
                   <View style={styles.memberAvatarWrapper}>
-                    <View style={[styles.memberAvatar, { backgroundColor: colors.cardElevated }]}>
-                      <Text style={[styles.memberAvatarText, { color: colors.textPrimary }]}>{initials}</Text>
-                    </View>
+                    <Avatar
+                      name={member.user.name}
+                      imageUrl={member.user.avatarUrl}
+                      size={40}
+                      borderRadius={10}
+                      backgroundColor={colors.cardElevated}
+                      textColor={colors.textPrimary}
+                    />
                   </View>
 
                   <View style={styles.memberInfo}>
@@ -226,6 +350,15 @@ export default function TeamsScreen() {
                         },
                       ]}
                     >
+                      <Avatar
+                        name={member.user.name}
+                        imageUrl={member.user.avatarUrl}
+                        size={40}
+                        borderRadius={10}
+                        backgroundColor={colors.cardElevated}
+                        textColor={colors.textPrimary}
+                        style={styles.pendingAvatar}
+                      />
                       <View style={styles.memberInfo}>
                         <Text style={[styles.memberName, { color: colors.textPrimary }]}>
                           {member.user.name}
@@ -274,9 +407,13 @@ export default function TeamsScreen() {
             {mentor ? (
             <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
               <View style={styles.mentorHeader}>
-                <View style={[styles.mentorAvatarLarge, { backgroundColor: colors.accent }]}>
-                  <Text style={styles.mentorAvatarTextLarge}>{getInitials(mentor.name)}</Text>
-                </View>
+                <Avatar
+                  name={mentor.name}
+                  imageUrl={mentor.avatarUrl}
+                  size={48}
+                  borderRadius={12}
+                  backgroundColor={colors.accent}
+                />
                 <View style={styles.mentorDetails}>
                   <View style={styles.mentorNameRow}>
                     <Text style={[styles.mentorNameText, { color: colors.textPrimary }]}>{mentor.name}</Text>
@@ -347,41 +484,11 @@ export default function TeamsScreen() {
             </TouchableOpacity>
 
             <View style={styles.noTeamFooter}>
-              {loadingInvites ? null : invitations.length > 0 ? (
-                <View style={[styles.inviteCard, { backgroundColor: colors.cardElevated, borderColor: colors.border }]}>
-                  <Text style={[styles.inviteTitle, { color: colors.textPrimary }]}>Lời mời tham gia đội</Text>
-                  {invitations.map((inv) => (
-                    <View key={inv.teamId} style={styles.inviteRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.inviteTeam, { color: colors.textPrimary }]}>{inv.teamName}</Text>
-                        <Text style={[styles.inviteMeta, { color: colors.textSecondary }]}>
-                          {inv.eventName} · Trưởng nhóm: {inv.leaderName}
-                        </Text>
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.inviteAccept, { backgroundColor: colors.accent }]}
-                        onPress={async () => {
-                          await accept(inv.teamId);
-                          await refreshTeamStatus();
-                          await refreshWorkspace();
-                        }}
-                      >
-                        <Text style={styles.inviteBtnText}>Nhận</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.inviteReject, { borderColor: colors.border }]}
-                        onPress={() => reject(inv.teamId)}
-                      >
-                        <Text style={[styles.inviteRejectText, { color: colors.textSecondary }]}>Từ chối</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              ) : (
+              {!loadingInvites && invitations.length === 0 ? (
                 <Text style={[styles.noTeamFooterText, { color: colors.textSecondary }]}>
                   Chưa có lời mời tham gia đội nào.
                 </Text>
-              )}
+              ) : null}
             </View>
           </View>
         )}
@@ -551,17 +658,7 @@ const styles = StyleSheet.create({
     position: "relative",
     marginRight: 12,
   },
-  memberAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  memberAvatarText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
+  pendingAvatar: { marginRight: 12 },
   statusDot: {
     position: "absolute",
     bottom: -1,
@@ -613,18 +710,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     marginBottom: 12,
-  },
-  mentorAvatarLarge: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  mentorAvatarTextLarge: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "900",
   },
   mentorDetails: {
     flex: 1,
@@ -769,29 +854,58 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 12,
     gap: 10,
+    marginBottom: 16,
   },
   inviteTitle: {
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
   },
-  inviteRow: {
+  inviteItem: {
+    paddingTop: 10,
+    gap: 10,
+  },
+  invitePersonRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
+  },
+  inviteDetails: {
+    flex: 1,
+  },
+  invitePersonName: {
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  invitePersonEmail: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  inviteTarget: {
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   inviteTeam: { fontSize: 14, fontWeight: "700" },
   inviteMeta: { fontSize: 11, marginTop: 2 },
+  inviteActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
   inviteAccept: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
   },
   inviteBtnText: { color: "#FFFFFF", fontSize: 11, fontWeight: "700" },
   inviteReject: {
+    flex: 1,
+    alignItems: "center",
     paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingVertical: 9,
+    borderRadius: 10,
     borderWidth: 1,
   },
   inviteRejectText: { fontSize: 11, fontWeight: "600" },

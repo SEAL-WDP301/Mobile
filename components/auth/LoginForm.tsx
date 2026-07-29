@@ -10,7 +10,7 @@ import Divider from "@/components/ui/Divider";
 import { useTheme } from "@/constants/theme/ThemeProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiError } from "@/services/api/client";
-import { startGithubOAuth } from "@/services/oauth";
+import { startGithubOAuth, startGoogleOAuth } from "@/services/oauth";
 
 export default function LoginForm() {
   const { theme } = useTheme();
@@ -20,6 +20,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -40,6 +41,23 @@ export default function LoginForm() {
       Alert.alert("Đăng nhập thất bại", message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      const tokens = await startGoogleOAuth();
+      await loginWithTokens(tokens.accessToken, tokens.refreshToken);
+      router.replace("/(tabs)");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đăng nhập Google thất bại.";
+      if (message !== "Đăng nhập Google đã bị hủy.") {
+        Alert.alert("Đăng nhập Google thất bại", message);
+      }
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -91,16 +109,32 @@ export default function LoginForm() {
       </View>
 
       <Button
-        title={loading ? "Signing In..." : "Login with Email"}
+        title="Login with Email"
         onPress={handleLogin}
+        loading={loading}
       />
 
       <Divider text="Or continue with" />
 
       <TouchableOpacity
+        style={[
+          styles.socialButton,
+          styles.googleButton,
+          { borderColor: theme.border },
+        ]}
+        onPress={handleGoogleLogin}
+        disabled={googleLoading || loading || githubLoading}
+      >
+        <FontAwesome name="google" size={20} color="#EA4335" />
+        <Text style={{ color: theme.text }}>
+          {googleLoading ? "Connecting Google..." : "Continue with Google"}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={[styles.socialButton, { borderColor: theme.border }]}
         onPress={handleGithubLogin}
-        disabled={githubLoading || loading}
+        disabled={githubLoading || loading || googleLoading}
       >
         <FontAwesome name="github" size={20} color={theme.text} />
         <Text style={{ color: theme.text }}>
@@ -137,6 +171,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 10,
+  },
+  googleButton: {
+    backgroundColor: "rgba(255,255,255,0.02)",
   },
   registerLink: { flexDirection: "row", justifyContent: "center", gap: 6 },
 });

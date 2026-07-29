@@ -91,8 +91,9 @@ export function useMentorChat({
       setSending(true);
       setError(null);
       try {
-        await sendChatMessage(teamId, content.trim());
-        await markChatMessagesRead(teamId);
+        const savedMessage = await sendChatMessage(teamId, content.trim());
+        setMessages((prev) => mergeMessages(prev, [savedMessage]));
+        await markChatMessagesRead(teamId).catch(() => undefined);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Không gửi được tin nhắn");
         throw e;

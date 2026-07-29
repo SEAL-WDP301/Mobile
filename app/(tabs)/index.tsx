@@ -158,7 +158,13 @@ export default function HomeScreen() {
           onPress={() => router.push("/notifications")}
         >
           <Bell size={18} color={colors.textPrimary} />
-          {unreadCount > 0 && <View style={[styles.badge, { backgroundColor: colors.accent }]} />}
+          {unreadCount > 0 && (
+            <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -478,11 +484,19 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: 9,
-    right: 9,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: -5,
+    right: -6,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  badgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "900",
   },
   scrollContent: {
     paddingHorizontal: 16,

@@ -29,11 +29,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocale } from "@/contexts/LocaleContext";
 import {
   computeProfileCompletion,
-  getInitials,
 } from "@/utils/format";
 import {
   formatSupportContact,
 } from "@/constants/config";
+import Avatar from "@/components/ui/Avatar";
 
 export default function ProfileScreen() {
   const { isDark, toggle } = useTheme();
@@ -44,7 +44,6 @@ export default function ProfileScreen() {
   const displayEmail = user?.email ?? "—";
   const studentId = user?.studentProfile?.studentCode ?? "—";
   const university = user?.studentProfile?.universityName ?? "Chưa cập nhật";
-  const avatarInitials = getInitials(displayName);
   const profileCompletion = user ? computeProfileCompletion(user) : 0;
 
   const colors = {
@@ -93,9 +92,13 @@ export default function ProfileScreen() {
         {/* ================= PROFILE CARD ================= */}
         <View style={[styles.profileCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
           <View style={styles.profileHeader}>
-            <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
-              <Text style={styles.avatarText}>{avatarInitials}</Text>
-            </View>
+            <Avatar
+              name={displayName}
+              imageUrl={user?.avatarUrl}
+              size={60}
+              borderRadius={15}
+              backgroundColor={colors.accent}
+            />
             <View style={styles.profileDetails}>
               <Text style={[styles.profileName, { color: colors.textPrimary }]}>{displayName}</Text>
               <Text style={[styles.profileSubText, { color: colors.textSecondary }]}>
@@ -313,18 +316,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 15,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "900",
   },
   profileDetails: {
     flex: 1,

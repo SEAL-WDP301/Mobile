@@ -29,22 +29,36 @@ export function extractTokensFromUrl(
 }
 
 export async function startGithubOAuth() {
+  return startOAuth("github");
+}
+
+export async function startGoogleOAuth() {
+  return startOAuth("google");
+}
+
+async function startOAuth(provider: "github" | "google") {
   const redirectUri = getOAuthRedirectUri();
-  const authUrl = `${API_BASE_URL}/auth/github?redirect_uri=${encodeURIComponent(redirectUri)}`;
+  const authUrl = `${API_BASE_URL}/auth/${provider}?redirect_uri=${encodeURIComponent(redirectUri)}`;
 
   const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
 
   if (result.type === "cancel" || result.type === "dismiss") {
-    throw new Error("Đăng nhập GitHub đã bị hủy.");
+    throw new Error(
+      `Đăng nhập ${provider === "github" ? "GitHub" : "Google"} đã bị hủy.`,
+    );
   }
 
   if (result.type !== "success") {
-    throw new Error("Đăng nhập GitHub thất bại.");
+    throw new Error(
+      `Đăng nhập ${provider === "github" ? "GitHub" : "Google"} thất bại.`,
+    );
   }
 
   const tokens = extractTokensFromUrl(result.url);
   if (!tokens) {
-    throw new Error("Không nhận được token đăng nhập từ GitHub.");
+    throw new Error(
+      `Không nhận được token đăng nhập từ ${provider === "github" ? "GitHub" : "Google"}.`,
+    );
   }
 
   return tokens;

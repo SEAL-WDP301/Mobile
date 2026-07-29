@@ -10,12 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Send } from "lucide-react-native";
+import { Check, CheckCheck, Send } from "lucide-react-native";
 import { useTheme } from "@/constants/theme/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMentorChat } from "@/hooks/useMentorChat";
 import type { TeamChatMessage } from "@/types/api";
-import { formatDateTime, getInitials } from "@/utils/format";
+import Avatar from "@/components/ui/Avatar";
 
 type ChatMessage = TeamChatMessage;
 
@@ -45,6 +45,13 @@ function getSenderRoleLabel(role: string) {
     default:
       return "";
   }
+}
+
+function formatChatTime(value: string) {
+  return new Date(value).toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function ChatPanel(props: ChatPanelProps) {
@@ -88,13 +95,31 @@ export default function ChatPanel(props: ChatPanelProps) {
     const isMine = item.senderId === user?.id;
     const displayContent = item.isDeleted ? "Tin nhắn đã bị xóa" : item.content;
     const roleLabel = getSenderRoleLabel(item.sender.role);
+    const readers = isMine
+      ? Array.from(
+          new Map(
+            (item.reads ?? [])
+              .filter((read) => read.userId !== user?.id)
+              .map((read) => [read.userId, read]),
+          ).values(),
+        )
+      : [];
+    const isRead = readers.length > 0;
+    const readerNames = readers
+      .map((read) => read.user?.name ?? `Người dùng #${read.userId}`)
+      .join(", ");
 
     return (
       <View style={[styles.messageRow, isMine ? styles.messageRowMine : styles.messageRowOther]}>
         {!isMine && (
-          <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
-            <Text style={styles.avatarText}>{getInitials(item.sender.name)}</Text>
-          </View>
+          <Avatar
+            name={item.sender.name}
+            imageUrl={item.sender.avatarUrl}
+            size={32}
+            borderRadius={10}
+            backgroundColor={colors.accent}
+            style={styles.avatar}
+          />
         )}
         <View style={[styles.bubble, { backgroundColor: isMine ? colors.mineBg : colors.otherBg }]}>
           {!isMine && (
@@ -106,15 +131,60 @@ export default function ChatPanel(props: ChatPanelProps) {
           <Text style={[styles.messageText, { color: isMine ? "#FFF" : colors.textPrimary }]}>
             {displayContent}
           </Text>
-          <Text
-            style={[
-              styles.timeText,
-              { color: isMine ? "rgba(255,255,255,0.75)" : colors.textSecondary },
-            ]}
-          >
-            {formatDateTime(item.createdAt)}
-            {item.isEdited ? " · đã sửa" : ""}
-          </Text>
+          <View style={[styles.messageMeta, isMine && styles.messageMetaMine]}>
+            <Text
+              style={[
+                styles.timeText,
+                { color: isMine ? "rgba(255,255,255,0.75)" : colors.textSecondary },
+              ]}
+            >
+              {formatChatTime(item.createdAt)}
+              {item.isEdited ? " · đã sửa" : ""}
+            </Text>
+            {isMine ? (
+              isRead ? (
+                <CheckCheck
+                  size={12}
+                  strokeWidth={2.5}
+                  color="#FFFFFF"
+                  accessibilityLabel="Đã đọc"
+                />
+              ) : (
+                <Check
+                  size={12}
+                  strokeWidth={2.5}
+                  color="rgba(255,255,255,0.9)"
+                  accessibilityLabel="Đã gửi"
+                />
+              )
+            ) : null}
+          </View>
+          {isMine && readers.length > 0 ? (
+            <View
+              style={styles.readersRow}
+              accessibilityLabel={`Đã xem bởi ${readerNames}`}
+            >
+              <View style={styles.readerAvatars}>
+                {readers.map((read, index) => {
+                  const readerName = read.user?.name ?? `Người dùng #${read.userId}`;
+                  return (
+                    <Avatar
+                      key={read.userId}
+                      name={readerName}
+                      imageUrl={read.user?.avatarUrl}
+                      size={16}
+                      borderRadius={8}
+                      backgroundColor="#D85D16"
+                      style={[
+                        styles.readerAvatar,
+                        index > 0 && styles.readerAvatarOverlap,
+                      ]}
+                    />
+                  );
+                })}
+              </View>
+            </View>
+          ) : null}
         </View>
       </View>
     );
@@ -187,7 +257,7 @@ export default function ChatPanel(props: ChatPanelProps) {
           {sending ? (
             <ActivityIndicator color="#FFF" size="small" />
           ) : (
-            <Send size={18} color="#FFF" />
+            <Send size={16} color="#FFF" />
           )}
         </TouchableOpacity>
       </View>
@@ -203,26 +273,39 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   subtitleText: { fontSize: 12, lineHeight: 18 },
-  listContent: { padding: 16, paddingBottom: 8, flexGrow: 1 },
+  listContent: { padding: 12, paddingBottom: 6, flexGrow: 1 },
   centerState: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 8 },
   stateText: { fontSize: 13, textAlign: "center" },
-  messageRow: { flexDirection: "row", marginBottom: 12, maxWidth: "88%" },
+  messageRow: { flexDirection: "row", marginBottom: 8, maxWidth: "84%" },
   messageRowMine: { alignSelf: "flex-end" },
   messageRowOther: { alignSelf: "flex-start" },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
     marginRight: 8,
     marginTop: 2,
   },
-  avatarText: { color: "#FFF", fontSize: 11, fontWeight: "800" },
-  bubble: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10 },
-  senderName: { fontSize: 11, fontWeight: "700", marginBottom: 4 },
-  messageText: { fontSize: 14, lineHeight: 20 },
-  timeText: { fontSize: 10, marginTop: 6 },
+  bubble: { borderRadius: 14, paddingHorizontal: 10, paddingVertical: 8 },
+  senderName: { fontSize: 10, fontWeight: "700", marginBottom: 3 },
+  messageText: { fontSize: 13, lineHeight: 18 },
+  messageMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: 4,
+  },
+  messageMetaMine: { justifyContent: "flex-end" },
+  timeText: { fontSize: 9 },
+  readersRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginTop: 4,
+  },
+  readerAvatars: { flexDirection: "row", alignItems: "center" },
+  readerAvatar: {
+    borderWidth: 1,
+    borderColor: "#F37021",
+  },
+  readerAvatarOverlap: { marginLeft: -5 },
   errorText: { fontSize: 12, paddingHorizontal: 16, paddingBottom: 6 },
   composer: {
     flexDirection: "row",
@@ -234,16 +317,16 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 42,
+    minHeight: 38,
     maxHeight: 120,
     fontSize: 15,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
   },

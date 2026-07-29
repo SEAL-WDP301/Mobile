@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { getSocketBaseUrl } from "@/constants/api";
 import { getAccessToken } from "./api/tokenStorage";
+import type { TeamChatMessage } from "@/types/api";
 
 type ChatSocket = Socket;
 
@@ -75,9 +76,14 @@ export async function leaveChatRoom(teamId: number) {
   socket.emit("leave_team_room", teamId);
 }
 
-export async function sendChatMessage(teamId: number, content: string) {
+export async function sendChatMessage(
+  teamId: number,
+  content: string,
+): Promise<TeamChatMessage> {
   const client = await getChatSocket();
-  client.emit("send_chat_message", { teamId, content });
+  return client
+    .timeout(10000)
+    .emitWithAck("send_chat_message", { teamId, content });
 }
 
 export async function markChatMessagesRead(teamId: number) {

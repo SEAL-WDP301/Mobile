@@ -63,7 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     await authApi.signOut();
     const { disconnectChatSocket } = await import("@/services/chatSocket");
+    const { disconnectFeedbackSocket } = await import(
+      "@/services/feedbackSocket"
+    );
     disconnectChatSocket();
+    disconnectFeedbackSocket();
     setUser(null);
   }, []);
 

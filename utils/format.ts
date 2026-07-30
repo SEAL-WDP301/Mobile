@@ -24,13 +24,23 @@ export function formatDateRange(
 
 export function formatDateTime(value?: string | null): string {
   if (!value) return "—";
-  return new Date(value).toLocaleString("vi-VN", {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const datePart = date.toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
+  });
+  const timePart = date.toLocaleTimeString("vi-VN", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Ho_Chi_Minh",
   });
+
+  return `${datePart} ${timePart}`;
 }
 
 export function formatRelativeTime(value: string): string {

@@ -19,6 +19,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { getMentorFeedback } from "@/services/api/teams";
 import { updateFeedbackStatus } from "@/services/api/submissions";
 import { ApiError } from "@/services/api/client";
+import { getFeedbackSocket } from "@/services/feedbackSocket";
 import type { FeedbackStatus, MentorFeedback } from "@/types/api";
 import { formatDateTime } from "@/utils/format";
 
@@ -69,6 +70,48 @@ export default function ResultsScreen() {
   useEffect(() => {
     loadFeedbacks();
   }, [loadFeedbacks]);
+
+  useEffect(() => {
+    if (!team?.id) return;
+
+    let disposed = false;
+    let cleanupSocket: (() => void) | undefined;
+    const teamId = team.id;
+
+    void getFeedbackSocket()
+      .then((client) => {
+        if (disposed) return;
+
+        const joinTeamRoom = () => {
+          client.emit("join_team_room", teamId);
+        };
+        const refreshResults = () => {
+          void Promise.all([loadFeedbacks(), refreshWorkspace()]).catch(
+            () => undefined,
+          );
+        };
+
+        client.on("connect", joinTeamRoom);
+        client.on("feedback_updated", refreshResults);
+        if (client.connected) joinTeamRoom();
+
+        cleanupSocket = () => {
+          client.off("connect", joinTeamRoom);
+          client.off("feedback_updated", refreshResults);
+          if (client.connected) {
+            client.emit("leave_team_room", teamId);
+          }
+        };
+      })
+      .catch(() => {
+        // The initial API load keeps the screen usable when realtime is offline.
+      });
+
+    return () => {
+      disposed = true;
+      cleanupSocket?.();
+    };
+  }, [loadFeedbacks, refreshWorkspace, team?.id]);
 
   const handleStatusChange = async (feedbackId: number, status: FeedbackStatus) => {
     try {
